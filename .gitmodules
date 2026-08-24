@@ -1,0 +1,12 @@
+[submodule "qqn-tf"]
+	path = qqn-tf
+	url = git@github.com:SimiaCryptus/qqn-tf.git
+[submodule "qqn-jax"]
+	path = qqn-jax
+	url = git@github.com:SimiaCryptus/qqn-jax.git
+[submodule "qqn-torch"]
+	path = qqn-torch
+	url = git@github.com:SimiaCryptus/qqn-torch.git
+[submodule "qqn-optimizer"]
+	path = qqn-optimizer
+	url = git@github.com:SimiaCryptus/qqn-optimizer.git
