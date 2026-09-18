@@ -2,17 +2,17 @@
 
 ## Abstract
 
-Standard empirical risk minimization treats every training sample as an *objective*: each
+Standard empirical risk minimization treats every training sample as an _objective_: each
 example contributes a gradient term to a single scalar loss, and the optimizer follows the
 sum. We propose an alternative decomposition in which a sample's role in optimization is
 determined by its own predictive state. Samples that are misclassified, or correct but
 uncertain, act as objectives and supply the descent direction. Samples that are both correct
-and *confident* — operationalized by an information-theoretic gate, e.g. predictive entropy
+and _confident_ — operationalized by an information-theoretic gate, e.g. predictive entropy
 \(H (x) \le H_{\mathrm{mem}} = 0.5\) nats — are removed from the objective and instead
 instantiate **inequality constraints** on the aggregate update: the step must not decrease
 their margin (equivalently, must not increase their loss or entropy) to first order. The
 resulting per-step problem is a small quadratic program whose solution is a projection of the
-raw objective direction onto a polyhedral *no-decrease cone*, with dual multipliers that admit
+raw objective direction onto a polyhedral _no-decrease cone_, with dual multipliers that admit
 natural reading as the shadow price of each stabilized sample. We call the method **EG-PTGP** (Entropy-Gated Per-Sample
 Trust-Region Gradient Projection). We give the
 formulation, closed-form and approximate solvers, a spectrum of **region policies** — from
@@ -21,8 +21,8 @@ to one region per sample — together with a fidelity bound that makes clustered
 principled middle, a first-order stability analysis, an honest
 placement relative to large-margin losses, trust-region policy optimization, GEM/A-GEM,
 orthogonal gradient descent, loss flooding, and confidence penalties, and a pre-registered set
-of falsifiable predictions together with the failure modes we expect (chiefly *over-frozen
-correctness* and *gradient dead zones*). The central claim is not that constrained descent is
+of falsifiable predictions together with the failure modes we expect (chiefly _over-frozen
+correctness_ and _gradient dead zones_). The central claim is not that constrained descent is
 new, but that **certainty-gated, within-task, per-sample constraint routing** is a distinct and
 testable training regime with a principled stopping criterion for memorization.
 
@@ -38,7 +38,7 @@ $$
 \theta_{t+1} = \theta_t - \eta\, \nabla_\theta \mathcal{L} (\theta_t),
 $$
 
-which assigns every sample the same *structural role*. A sample that the model already
+which assigns every sample the same _structural role_. A sample that the model already
 classifies with 0.999 confidence still contributes a gradient that pushes parameters, and that
 push interacts — constructively or destructively — with the pushes coming from samples the
 model gets wrong. Two well-documented pathologies follow. First, **gradient interference**: the
@@ -48,7 +48,7 @@ misallocation**: with cross-entropy, easy examples never stop asking for more co
 non-trivial fraction of the gradient budget is spent driving already-solved examples from
 \(10^{-2}\) to \(10^{-6}\) loss rather than repairing the frontier.
 
-The mechanism we propose is a change of *role*, not a change of loss shape:
+The mechanism we propose is a change of _role_, not a change of loss shape:
 
 > If the model already gets a sample right, and is confident about it, that sample should stop
 > being a thing we optimize and start being a thing we must not break.
@@ -63,30 +63,30 @@ $$
 
 where \(d_{\mathrm{obj}}\) is the ordinary mini-batch gradient restricted to \(E\), \(v_i\) is
 the gradient of sample \(i\)'s margin, and \(\varepsilon_i \ge 0\) is a certainty-dependent
-slack. Membership in \(M\) is gated by an entropy threshold, which supplies a *principled
-criterion for when a sample is done being learned*: not "zero loss", but "entropy below
+slack. Membership in \(M\) is gated by an entropy threshold, which supplies a _principled
+criterion for when a sample is done being learned_: not "zero loss", but "entropy below
 \(H_{\mathrm{mem}}\) nats".
 
 Two design commitments distinguish this from nearby methods and deserve stating up front.
 
 1. **The constraint is on the aggregate step, not on the sample's own gradient.** A subtlety
    that is easy to get wrong (and which we derive in Appendix A) is that for cross-entropy, a
-   correctly-classified sample's *own* negative gradient already increases its own margin. A
+   correctly-classified sample's _own_ negative gradient already increases its own margin. A
    literal per-sample projection of \(g_i\) onto \(\{g : \langle g, v_i\rangle \le 0\}\) is
-   therefore almost always vacuous. The constraint only *binds* under aggregation: it is the
+   therefore almost always vacuous. The constraint only _binds_ under aggregation: it is the
    sum over the batch — dominated by error gradients — that can erode sample \(i\)'s margin.
-   EG-PTGP is therefore a per-sample- *constraint*, whole-step- *projection* method.
+   EG-PTGP is therefore a per-sample- _constraint_, whole-step- _projection_ method.
 2. **The gate is information-theoretic and two-sided.** Correctness alone is a brittle gate (a sample can be correct at
    0.34/0.33/0.33). Entropy adds the missing axis: the gate fires
-   only for correct *and* low-entropy samples, and the same threshold simultaneously acts as a **memorization cap** — we
+   only for correct _and_ low-entropy samples, and the same threshold simultaneously acts as a **memorization cap** — we
    do not ask the objective to push entropy below
    \(H_{\mathrm{mem}}\), we only ask it not to rise back above it.
 3. **Constraints are organized by a region policy, not necessarily one per sample.** The
    name says "per-sample", and one region per memorized sample is the exact end of the
-   spectrum, but the method is defined for *any* aggregation of \(M\) into \(k\) no-decrease
+   spectrum, but the method is defined for _any_ aggregation of \(M\) into \(k\) no-decrease
    regions: one global region, one per class, one per (class, runner-up) pair, or one per
    gradient-space cluster (§3.7). Clustering is not merely a cost reduction. A region's
-   constraint protects the region's *mean* margin gradient, and how well that protects each
+   constraint protects the region's _mean_ margin gradient, and how well that protects each
    member is governed by how aligned the members' gradients are (Proposition 2, §4.5). The
    partition is therefore part of the method, and we argue that clustered regions — not the
    two extremes — are where fidelity and plasticity balance.
@@ -149,7 +149,7 @@ high-entropy ones. The complementary **objective weight** is \(\alpha_i = 1 - s_
 regimes emerge, matching the intended semantics:
 
 | regime              | condition                                 | role                                   |
-|---------------------|-------------------------------------------|----------------------------------------|
+| ------------------- | ----------------------------------------- | -------------------------------------- |
 | error               | \(c_i = 0\)                               | pure objective, full gradient budget   |
 | fragile correctness | \(c_i = 1\), \(H_i > H_{\mathrm{mem}}\)   | mostly objective, weak constraint      |
 | memorized           | \(c_i = 1\), \(H_i \le H_{\mathrm{mem}}\) | pure constraint, zero objective weight |
@@ -205,7 +205,7 @@ $$
 
 with Gram matrix \(G_{ij} = \langle v_i, v_j\rangle\) and \(b_i = \langle v_i, d_{\mathrm{obj}}\rangle\).
 Complementary slackness \(\lambda_i \, (\langle v_i, d^\star\rangle - \varepsilon_i) = 0\) means
-only the samples *actually about to be damaged* pay anything. The multipliers \(\lambda_i\) are
+only the samples _actually about to be damaged_ pay anything. The multipliers \(\lambda_i\) are
 the rigorous version of the "stability credit" intuition: \(\lambda_i\) is the marginal amount
 of objective progress being surrendered to keep sample \(i\) intact.
 
@@ -251,7 +251,7 @@ in increasing order of aggressiveness:
    \(k = 1\) recovers §3.4's closed form; \(k = |M|\) is the exact per-sample cone. The
    choice of partition is consequential enough to deserve its own section (§3.7).
 4. **Reservoir subsampling.** Sample \(k \ll |M|\) constraints per step from a memory buffer of
-   memorized examples, so the *population* of constraints is respected in expectation while
+   memorized examples, so the _population_ of constraints is respected in expectation while
    per-step cost is \(O (k)\).
 
 ### 3.7 Region policy: how many no-decrease regions, and who shares one
@@ -261,11 +261,11 @@ set is aggregated into constraints. The two extremes are easy to state; the inte
 territory is in between.
 
 **Extreme 1 — one region (\(k = 1\)).** A single constraint on the \(s\)-weighted mean margin
-gradient: *the average margin (or, in loss form, the average loss) of already-learned samples
-must not degrade.* This is the closed form of §3.4 and the A-GEM analogue. It is the cheapest
+gradient: _the average margin (or, in loss form, the average loss) of already-learned samples
+must not degrade._ This is the closed form of §3.4 and the A-GEM analogue. It is the cheapest
 policy and can never produce a dead zone (a single half-space removes at most one direction),
 but it protects only the average. A step may sacrifice individual memorized samples as long as
-others gain, and — worse — opposed margin gradients *cancel* in the mean, so the constraint is
+others gain, and — worse — opposed margin gradients _cancel_ in the mean, so the constraint is
 closest to vacuous precisely when the memorized set is internally conflicted, which is when
 protection is most needed.
 
@@ -290,7 +290,7 @@ where \(\sigma_c\) is a within-region dispersion radius (§4.5) and \(\zeta \ge 
 the slack to make the region constraint conservative for its members (\(\zeta = 0\) is the
 plain mean constraint). Proposition 2 shows that the first-order damage a region constraint
 can leak onto an individual member is bounded by that member's distance from the region
-centroid, so *the partition should minimize within-region gradient dispersion*. That
+centroid, so _the partition should minimize within-region gradient dispersion_. That
 criterion ranks the candidate clustering strategies:
 
 (a) **By class** (\(k = K\)). "No class the model already knows may get worse this step" —
@@ -305,9 +305,9 @@ penultimate features, so
 \(\langle v_i, v_j\rangle = \langle e_{y_i} - e_{r_i},\, e_{y_j} - e_{r_j}\rangle\,\langle \phi_i, \phi_j\rangle\).
 Same pair gives \(2\langle\phi_i,\phi_j\rangle\); same class, different runner-up gives
 \(\langle\phi_i,\phi_j\rangle\); and if \(i\)'s class is \(j\)'s runner-up the class-space
-factor is *negative* — the cancellation case. Grouping by pair therefore fixes the
+factor is _negative_ — the cancellation case. Grouping by pair therefore fixes the
 class-space direction exactly and leaves only feature dispersion inside a region. The
-number of *populated* pairs is far below \(K (K-1)\): it is the set of confusable class
+number of _populated_ pairs is far below \(K (K-1)\): it is the set of confusable class
 pairs, i.e. one region per live decision boundary. This is our recommended default for
 classification at moderate \(K\).
 
@@ -316,7 +316,7 @@ Approximates (b) when \(K\) is large enough that pairs are too many, since featu
 class tend to be locally coherent and runner-ups are locally consistent.
 
 (d) **By gradient-space cluster.** Spherical \(k\)-means (cosine) on the \(v_i\) themselves.
-This *directly* minimizes the leakage bound of Proposition 2 and rules out cancellation by
+This _directly_ minimizes the leakage bound of Proposition 2 and rules out cancellation by
 construction, because opposed gradients cannot share a region. It looks expensive, but in
 the head-only form the Gram over \(M\) factorizes,
 \(G = (A A^\top) \odot (\Phi \Phi^\top)\) with rows \(a_i = e_{y_i} - e_{r_i}\), so kernel
@@ -327,9 +327,9 @@ promising and the one the ablations should be built around.
 alignment. If (d) does not beat (e) at matched \(k\), clustering is not load-bearing and
 regions are pure cost machinery.
 
-(f) **Adaptive / hierarchical.** Start at \(k = 1\); *split* a region when its measured
+(f) **Adaptive / hierarchical.** Start at \(k = 1\); _split_ a region when its measured
 post-step violation rate (instrumentation §7.1 (g)) or dispersion \(\sigma_c\) exceeds a
-threshold; *merge* two regions whose multipliers have both been zero for \(T\) steps or
+threshold; _merge_ two regions whose multipliers have both been zero for \(T\) steps or
 whose centroids are within an angle \(\vartheta\). This ties the region policy to the
 dead-zone controller: growing \(k\) is the "tighten" action and merging is the "relax"
 action, so a single controller targeting
@@ -349,12 +349,12 @@ centroid, and merge any region whose population falls below \(n_{\min}\).
 **Choosing \(k\).** Larger \(k\) means higher fidelity (Prop. 2) and a smaller feasible set (the union of fine
 constraints implies the coarse mean constraint, not conversely), hence
 earlier dead zones. We predict an interior optimum (H9), and that the right scale for \(k\) is
-the number of *confusable class pairs* rather than \(|M|\) or \(K\).
+the number of _confusable class pairs_ rather than \(|M|\) or \(K\).
 
 **Summary of the spectrum.**
 
 | policy                      | \(k\)             | protects          | cancellation risk    | dead-zone risk |
-|-----------------------------|-------------------|-------------------|----------------------|----------------|
+| --------------------------- | ----------------- | ----------------- | -------------------- | -------------- |
 | one region (mean)           | 1                 | average only      | high                 | none           |
 | per class                   | \(K\)             | class averages    | medium               | low            |
 | per (class, runner-up) pair | #confusable pairs | boundary averages | low                  | moderate       |
@@ -364,7 +364,7 @@ the number of *confusable class pairs* rather than \(|M|\) or \(K\).
 
 ### 3.8 Algorithm
 
-~~~
+```
 Algorithm 1: EG-PTGP (one step)
 inputs: batch B, params θ, lr η, H_mem, β, κ, warmup T0, buffer R
  1: forward pass -> logits z_i, probs p_i for i in B
@@ -382,9 +382,9 @@ inputs: batch B, params θ, lr η, H_mem, β, κ, warmup T0, buffer R
 13: if ||d*|| < δ ||d_obj||:  relax (increase κ, merge regions, or drop oldest)  # dead-zone guard
 14: θ <- optimizer_step(θ, d*)                    # d* may be fed to SGD/Adam as the "gradient"
 15: update R with newly memorized samples (reservoir sampling); every T_c steps refresh centroids
-~~~
+```
 
-Line 14 matters: \(d^\star\) is substituted for the gradient *before* the adaptive optimizer, so
+Line 14 matters: \(d^\star\) is substituted for the gradient _before_ the adaptive optimizer, so
 Adam's preconditioning applies to the already-projected direction. Projecting after
 preconditioning breaks the first-order feasibility guarantee (the constraint geometry is
 defined in gradient space, not in Adam-rescaled space); this is a real implementation trap and
@@ -414,7 +414,7 @@ when not used as a control.
 A point \(\theta\) is a fixed point of EG-PTGP when either \(E = \emptyset\) (everything is
 correct and below \(H_{\mathrm{mem}}\)) or \(d^\star = 0\), i.e. \(d_{\mathrm{obj}}\) lies in the
 normal cone \(\mathrm{cone}\{v_i\}_{i\in M}\). The second case is the interesting one: it is a
-KKT point of the *constrained* problem
+KKT point of the _constrained_ problem
 
 $$
 \min_\theta \ \sum_i \alpha_i \ell_i (\theta)
@@ -429,7 +429,7 @@ size and \(\lVert d^\star\rVert/\lVert d_{\mathrm{obj}}\rVert\) over training).
 ### 4.3 Why the entropy cap is not just early stopping
 
 A memorized sample contributes zero objective gradient but a live constraint. So the model is
-free to keep improving *elsewhere* while that sample's confidence is pinned in a band around
+free to keep improving _elsewhere_ while that sample's confidence is pinned in a band around
 \(H_{\mathrm{mem}}\) rather than driven to zero entropy. The resulting predictive distributions
 are, by construction, not saturated — which predicts better calibration (lower ECE/NLL) and
 more headroom for later revision, at the cost of slightly worse training loss. Early stopping,
@@ -441,12 +441,12 @@ The metaphor that motivated this work — misclassified samples "spend" gradient
 "accumulate stability credit" — turns out to be the dual problem:
 
 - \(d_{\mathrm{obj}}\) is demand for parameter movement from unsolved examples;
-- each \(v_i\) is a *right of way* held by a solved example;
+- each \(v_i\) is a _right of way_ held by a solved example;
 - \(\lambda_i\) is the shadow price paid to pass through, nonzero only for binding rights;
 - \(\lVert d_{\mathrm{obj}} - d^\star\rVert\) is the total price of the step, i.e. how much
   learning was forgone to preserve what is known.
 
-This makes the economy instrumentable. Per-sample cumulative \(\sum_t \lambda_i^{ (t)}\) is a *stability price index*
+This makes the economy instrumentable. Per-sample cumulative \(\sum_t \lambda_i^{ (t)}\) is a _stability price index_
 identifying which examples are structurally expensive — a plausible
 detector for mislabeled data, prototypes, and conflicting supervision.
 
@@ -472,7 +472,7 @@ Because \(0 \in \mathcal{C}\) and projection onto a convex set containing the or
 norm-non-increasing, \(\lVert d^\star\rVert \le \lVert d_{\mathrm{obj}}\rVert\), which is why
 the tightened slack \(\bar\varepsilon_c - \zeta\sigma_c\lVert d_{\mathrm{obj}}\rVert\) in §3.7
 with \(\sigma_c = \max_{i\in\mathcal{R}_c}\lVert v_i - \bar v_c\rVert\) and \(\zeta = 1\)
-makes the region constraint *imply* every member's individual constraint (at the cost of a
+makes the region constraint _imply_ every member's individual constraint (at the cost of a
 smaller feasible set). \(\square\)
 
 **Corollary (the partition is the \(k\)-means objective).** Summing the squared bound radii
@@ -493,18 +493,18 @@ Spherical \(k\)-means avoids this by clustering on direction rather than magnitu
 **Fidelity–plasticity trade-off.** Refining a partition can only shrink \(\mathcal{C}\): if
 every member constraint holds, the mean constraint holds, but not conversely. So \(k\) trades
 leakage (small \(k\)) against dead zones (large \(k\)), and neither extreme is expected to be
-optimal. The instrumentation in §7.1 (g) measures leakage directly — post-step violations of *individual* memorized
+optimal. The instrumentation in §7.1 (g) measures leakage directly — post-step violations of _individual_ memorized
 samples — so this trade-off is observable, not just argued.
 
 ### 4.6 Complexity
 
 | variant                                | extra memory                          | extra compute / step                                                  |
-|----------------------------------------|---------------------------------------|-----------------------------------------------------------------------|
+| -------------------------------------- | ------------------------------------- | --------------------------------------------------------------------- |
 | single mean constraint (§3.4)          | 1 gradient buffer                     | 1 backward over \(M\), 1 inner product                                |
 | \(k\) region constraints (§3.7)        | \(k\) buffers                         | 1 backward over \(M\) + \(k\) weighted sums, \(O(k^2 P)\) Gram + NNLS |
-| + gradient-space clustering, head-only | \(k \cdot P_{\text{head}}\) centroids | \(O(                                                                  |R|^2)\) factorized Gram every \(T_c\) steps, \(O(|M|k)\) assignment |
+| + gradient-space clustering, head-only | \(k \cdot P_{\text{head}}\) centroids | \(O(                                                                  | R           | ^2)\) factorized Gram every \(T_c\) steps, \(O( | M   | k)\) assignment |
 | head-only, \(k\) constraints           | \(k \cdot P_{\text{head}}\)           | negligible                                                            |
-| full per-sample, \(                    | M                                     | \) large                                                              | prohibitive | prohibitive |
+| full per-sample, \(                    | M                                     | \) large                                                              | prohibitive | prohibitive                                     |
 
 The practical recommendation is head-only with (class, runner-up) pair or gradient-space
 regions and \(k \in [4, 32]\); the single-mean constraint is the baseline, not the default.
@@ -513,27 +513,27 @@ regions and \(k \in [4, 32]\); the single-mean constraint is the baseline, not t
 
 ## 5. Relation to prior work
 
-We want the novelty claim to be narrow and defensible, so we state what is *not* new.
+We want the novelty claim to be narrow and defensible, so we state what is _not_ new.
 
 **Constrained/projected updates that avoid degrading stored examples.** Gradient Episodic
 Memory (GEM) and A-GEM solve essentially the projection of §3.4 using loss-form constraints
 \(\langle g_i, d\rangle \ge 0\) on episodic memories; Orthogonal Gradient Descent projects onto
 the orthogonal complement of old-task gradients. EG-PTGP's projection machinery is the same
-family. The differences are: (i) constraints are generated *within* a task, online, by a
+family. The differences are: (i) constraints are generated _within_ a task, online, by a
 certainty criterion rather than by task boundaries; (ii) constraints are margin/entropy-form
 rather than loss-form; (iii) the same gate also removes those samples from the objective. (iv) The constraint set is
 organized by an explicit region policy (§3.7). Seen this way,
 GEM's one-constraint-per-past-task is a partition by task identity and A-GEM's single mean
-constraint is the \(k = 1\) policy; EG-PTGP asks which partition of the protected set is *right* and answers with a
+constraint is the \(k = 1\) policy; EG-PTGP asks which partition of the protected set is _right_ and answers with a
 fidelity bound (Prop. 2) rather than with the task boundary.
 
 **Trust regions.** TRPO/PPO constrain a global divergence between successive policies.
 EG-PTGP's cone is per-sample and anchored to individual decision margins, so the trust region
-is *shaped* rather than spherical — but the projection logic is inherited.
+is _shaped_ rather than spherical — but the projection logic is inherited.
 
 **Large-margin objectives.** SVM hinge, L-Softmax, ArcFace/CosFace reshape the loss to reward
 margin. They remain objectives: a large-margin sample still pulls. EG-PTGP converts margin from
-a reward into a *floor*.
+a reward into a _floor_.
 
 **Saturation control on the objective side.** Loss flooding, confidence penalties, label
 smoothing, and self-adaptive/abstention losses all stop or reverse the drive toward zero loss.
@@ -542,7 +542,7 @@ particularly interpretable instance ("memorize to no more than half a nat"), but
 claim the mechanism is new in kind.
 
 **Example weighting.** Curriculum learning, hard-example mining, focal loss, and selective
-backprop reweight or drop easy samples. Dropping an easy sample and *constraining* on it are
+backprop reweight or drop easy samples. Dropping an easy sample and _constraining_ on it are
 materially different: the first surrenders its geometry, the second defends it.
 
 **Therefore the claimed contribution is:** the composition — an information-theoretic,
@@ -558,41 +558,41 @@ applied within-task and online, has not been studied as a training regime.
 Stated so they can fail.
 
 **H1 — Reduced prediction churn.** The per-epoch fraction of test predictions that flip will
-drop substantially (target: ≥30% relative reduction) versus matched ERM at equal accuracy. *Falsified if* churn is
+drop substantially (target: ≥30% relative reduction) versus matched ERM at equal accuracy. _Falsified if_ churn is
 unchanged or worse once learning rate schedules are matched.
 
 **H2 — Better calibration.** ECE and NLL improve, driven by the entropy cap; confidence
-histograms should show mass accumulating near \(e^{-H_{\mathrm{mem}}}\)-ish rather than at 1.0. *Falsified if*
+histograms should show mass accumulating near \(e^{-H_{\mathrm{mem}}}\)-ish rather than at 1.0. _Falsified if_
 accuracy-matched ECE does not improve, or if the improvement is fully explained
 by the §3.2 ablation (in which case the constraint channel adds nothing calibration-wise).
 
 **H3 — Faster reduction of error on hard examples.** With easy samples retired, the effective
 gradient concentrates on the frontier; expect faster fall in training error on the hardest
-decile at matched step count. *Falsified if* frontier error falls no faster, or if the retired
+decile at matched step count. _Falsified if_ frontier error falls no faster, or if the retired
 samples' margins decay anyway.
 
 **H4 — Emergent stability manifold.** Margin distributions become bimodal: a tight
 high-confidence mode pinned near the gate, and a diffuse frontier mode. Samples should cross
 \(H_{\mathrm{mem}}\) mostly once, with low recidivism (target: <5% of memorized samples ever
-returning to \(E\)). *Falsified if* the entropy trajectory shows heavy oscillation across the
+returning to \(E\)). _Falsified if_ the entropy trajectory shows heavy oscillation across the
 gate — that would indicate the constraints are not doing their job or the gate has hysteresis
 problems (add a Schmitt-trigger band if so).
 
 **H5 — Robustness to label noise.** Under symmetric label noise, EG-PTGP should resist
-memorizing noisy labels *later* than ERM, because noisy samples are rarely simultaneously
+memorizing noisy labels _later_ than ERM, because noisy samples are rarely simultaneously
 correct and low-entropy early, and because the entropy cap removes the mechanism by which
 cross-entropy drives noisy examples to zero loss. Additionally, cumulative \(\lambda_i\) should
-be diagnostic of noisy labels (AUC > 0.8). *Falsified if* noise memorization matches ERM.
+be diagnostic of noisy labels (AUC > 0.8). _Falsified if_ noise memorization matches ERM.
 
 **H6 — Reduced forgetting in continual settings.** Because the constraint set is generated
-automatically and continuously, split-task benchmarks should show reduced forgetting even *without* task boundaries
-being supplied. *Falsified if* EG-PTGP underperforms A-GEM given the
+automatically and continuously, split-task benchmarks should show reduced forgetting even _without_ task boundaries
+being supplied. _Falsified if_ EG-PTGP underperforms A-GEM given the
 same memory budget.
 
-**H7 — Non-monotone dependence on \(H_{\mathrm{mem}}\).** Very small \(H_{\mathrm{mem}}\) (e.g. 0.01 nats) degenerates
+**H7 — Non-monotone dependence on \(H\_{\mathrm{mem}}\).** Very small \(H_{\mathrm{mem}}\) (e.g. 0.01 nats) degenerates
 toward ERM; very large (e.g. 2 nats in a 10-class problem)
 over-freezes and underfits. We predict an interior optimum, plausibly 0.2–0.7 nats for 10-class
-problems, scaling roughly with \(\log K\). *Falsified if* performance is monotone in
+problems, scaling roughly with \(\log K\). _Falsified if_ performance is monotone in
 \(H_{\mathrm{mem}}\) over a wide range — which would mean the gate is not the operative variable.
 
 **H8 — Gradient dead zones are real.** As \(|M|\) grows late in training,
@@ -600,12 +600,12 @@ problems, scaling roughly with \(\log K\). *Falsified if* performance is monoton
 will stall unless slack \(\kappa\) is annealed upward or constraints are subsampled. We predict
 this is the dominant practical failure mode, not instability. **H9 — The region policy is load-bearing.** At matched
 \(k\) and compute, gradient-space (or (class, runner-up) pair) regions will show (a) a lower measured post-step
-*individual*
+_individual_
 violation rate among memorized samples than random or per-class regions, and (b) a smaller
 price ratio \(\lVert d_{\mathrm{obj}} - d^\star\rVert / \lVert d_{\mathrm{obj}}\rVert\) than
 the per-sample policy at equal violation rate. Performance will be non-monotone in \(k\):
 \(k = 1\) under-protects (individual violations comparable to ERM's churn on the same
-samples, driven by cancellation), \(k = |M|\) dead-zones. *Falsified if* random partitions
+samples, driven by cancellation), \(k = |M|\) dead-zones. _Falsified if_ random partitions
 match gradient-space clustering at every \(k\), or if \(k = 1\) already achieves H4's
 recidivism target — either result would mean regions are only cost machinery and the
 spectrum of §3.7 collapses to a single knob.
@@ -634,7 +634,7 @@ per-token (entropy over the vocabulary) rather than per-sequence.
 
 ERM; ERM + label smoothing; ERM + confidence penalty; loss flooding; focal loss; selective
 backprop; A-GEM with equal memory; L-Softmax/ArcFace; early stopping tuned per-sample-free.
-Matched compute and matched tuning budget throughout; report at equal *steps* and equal *wall-clock*, since projection
+Matched compute and matched tuning budget throughout; report at equal _steps_ and equal _wall-clock_, since projection
 is not free.
 
 ### 7.4 Ablations (these decide whether the idea has content)
@@ -666,7 +666,7 @@ is not free.
 
 **Over-frozen correctness.** The most likely way this fails: constraints from a large
 low-entropy population lock the geometry so tightly that nuanced boundary refinement stops,
-yielding *underfitting* of the frontier. Mitigations: slack annealing, constraint subsampling,
+yielding _underfitting_ of the frontier. Mitigations: slack annealing, constraint subsampling,
 capping \(|M|\) per step, or admitting only a random \(\rho\)-fraction of memorized samples as
 constraints.
 
@@ -705,7 +705,7 @@ constraint. We expect the strongest results in fine-tuning, not pretraining.
 
 **Generalization sign is genuinely unknown.** Two competing effects — stabilization (helps) vs
 premature freezing (hurts) — and we do not have a prior strong enough to predict the net. The
-honest statement is that the method changes *training dynamics* in measurable, predicted ways (H1, H4, H8 are
+honest statement is that the method changes _training dynamics_ in measurable, predicted ways (H1, H4, H8 are
 near-certain); whether test accuracy improves is an open empirical question.
 
 **Threshold transfer.** \(H_{\mathrm{mem}} = 0.5\) nats is a reasonable default for ~10 classes.
@@ -733,7 +733,7 @@ hyperparameter entirely).
 - **Second-order feasibility.** Add a curvature term via K-FAC or a Gauss–Newton approximation
   gradients — i.e. the per-class region policy of §3.7 (a) with groups in place of classes.
 - **Learned region assignment.** Treat the partition as a latent variable and fit it to
-  minimize *measured* post-step leakage rather than the dispersion proxy of Prop. 2, e.g. by
+  minimize _measured_ post-step leakage rather than the dispersion proxy of Prop. 2, e.g. by
   moving samples between regions whose constraints they were observed to violate.
   to make the no-decrease guarantee hold beyond first order.
 
@@ -742,8 +742,8 @@ hyperparameter entirely).
 ## 10. Conclusion
 
 EG-PTGP proposes a small change in bookkeeping with a large change in semantics: a training
-sample is either something the model is *trying to fit* or something the model is *obliged not
-to break*, and the boundary between those roles is drawn by an information-theoretic certainty
+sample is either something the model is _trying to fit_ or something the model is _obliged not
+to break_, and the boundary between those roles is drawn by an information-theoretic certainty
 threshold. Mechanically, the method reduces to a projection of the objective gradient onto a
 polyhedral no-decrease cone generated by confidently-correct samples — machinery shared with
 GEM/A-GEM and trust-region methods — combined with an entropy hinge that stops cross-entropy
@@ -766,7 +766,7 @@ that would show the idea is empty. The next step is to run them.
 \(-g_i\) does not decrease \(m_i\) to first order; i.e. \(\langle v_i, g_i\rangle \ge 0\)
 under a mild condition on the runner-up class.
 
-*Sketch.* Write \(\ell_i = -\log p_{y_i}\). In logit space,
+_Sketch._ Write \(\ell_i = -\log p_{y_i}\). In logit space,
 \(\partial \ell_i/\partial z_j = p_j - \mathbb{1}[j = y_i]\), so the negative logit-gradient
 raises \(z_{y_i}\) by \(1 - p_{y_i} > 0\) and lowers every other logit by \(p_j > 0\) —
 including the runner-up \(r = \arg\max_{j\ne y_i} z_j\). Since
@@ -779,11 +779,11 @@ isotropic on the two-dimensional span of \(\{e_{y_i} - e_r,\ p - e_{y_i}\}\). \(
 
 **Consequence.** The naive reading of "route the correct sample's gradient into a no-decrease
 region" is a no-op: \(g_i\) already lies in sample \(i\)'s own no-decrease half-space. The
-content of the idea is that the *batch* direction \(d_{\mathrm{obj}} = \sum_{j} \alpha_j g_j\)
+content of the idea is that the _batch_ direction \(d_{\mathrm{obj}} = \sum_{j} \alpha_j g_j\)
 need not, because error gradients from other samples can have
 \(\langle v_i, g_j\rangle > 0\). EG-PTGP therefore constrains the aggregate, which is exactly
 the regime in which the geometry is non-trivial and the dual multipliers are informative. This
-also explains why the method should be most valuable when batch gradients are *conflicted*
+also explains why the method should be most valuable when batch gradients are _conflicted_
 (fine-tuning, continual learning, noisy labels) and least valuable when they are aligned (early
 pretraining).
 

@@ -1,854 +1,1679 @@
 <!doctype html>
-  <!-- Self-contained html/es6/css — QQN illustrated summary -->
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>QQN Optimizer — Quadratic-Quasi-Newton, Illustrated</title>
-      <meta
-        name="description"
-        content="An illustrated, interactive introduction to the QQN (Quadratic-Quasi-Newton) optimizer: the quadratic path between gradient descent and quasi-Newton, its four strategy slots, what makes it different, and its history."
-      />
-      <link rel="icon" type="image/png" href="../../icon.png" />
-      <style>
-        :root {
-          --bg: #090e1c;
-          --bg-2: #0e1628;
-          --card: rgba(255, 255, 255, 0.035);
-          --card-2: rgba(255, 255, 255, 0.07);
-          --line: rgba(255, 255, 255, 0.09);
-          --text: #e6eaf2;
-          --muted: #98a3b8;
-          --dim: #6b7688;
-          --grad: #fb923c;
-          --oracle: #38bdf8;
-          --path: #a78bfa;
-          --point: #facc15;
-          --search: #f472b6;
-          --region: #34d399;
-          --r: 16px;
-          --maxw: 1120px;
+<!-- Self-contained html/es6/css — QQN illustrated summary -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QQN Optimizer — Quadratic-Quasi-Newton, Illustrated</title>
+    <meta
+      name="description"
+      content="An illustrated, interactive introduction to the QQN (Quadratic-Quasi-Newton) optimizer: the quadratic path between gradient descent and quasi-Newton, its four strategy slots, what makes it different, and its history."
+    />
+    <link rel="icon" type="image/png" href="../../icon.png" />
+    <style>
+      :root {
+        --bg: #090e1c;
+        --bg-2: #0e1628;
+        --card: rgba(255, 255, 255, 0.035);
+        --card-2: rgba(255, 255, 255, 0.07);
+        --line: rgba(255, 255, 255, 0.09);
+        --text: #e6eaf2;
+        --muted: #98a3b8;
+        --dim: #6b7688;
+        --grad: #fb923c;
+        --oracle: #38bdf8;
+        --path: #a78bfa;
+        --point: #facc15;
+        --search: #f472b6;
+        --region: #34d399;
+        --r: 16px;
+        --maxw: 1120px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          Inter,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--oracle);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      code,
+      pre,
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+      }
+      code {
+        background: rgba(255, 255, 255, 0.07);
+        padding: 0.1em 0.4em;
+        border-radius: 6px;
+        font-size: 0.9em;
+      }
+      pre {
+        background: #060a14;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem 1.1rem;
+        overflow: auto;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin: 0;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: inherit;
+      }
+      .math {
+        font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', Georgia, serif;
+      }
+      .wrap {
+        max-width: var(--maxw);
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+      section {
+        padding: 4.5rem 0;
+        border-top: 1px solid var(--line);
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-weight: 700;
+        margin: 0 0 0.5rem;
+      }
+      h2 {
+        font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+        line-height: 1.15;
+        margin: 0 0 0.75rem;
+        letter-spacing: -0.01em;
+      }
+      h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1.15rem;
+      }
+      h4 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+      }
+      p {
+        margin: 0 0 0.75rem;
+      }
+      .lead {
+        color: var(--muted);
+        font-size: 1.05rem;
+        max-width: 66ch;
+        margin: 0 0 2rem;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .small {
+        font-size: 0.88rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--card-2);
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition:
+          transform 0.15s,
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.11);
+        text-decoration: none;
+      }
+      .btn.primary {
+        background: linear-gradient(135deg, var(--grad), var(--path) 55%, var(--oracle));
+        color: #0b1020;
+        border: none;
+      }
+      .btn.small {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        padding: 1.25rem;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.12rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        line-height: 1.6;
+      }
+      .reveal {
+        opacity: 0;
+        transform: translateY(16px);
+        transition:
+          opacity 0.6s ease,
+          transform 0.6s ease;
+      }
+      .reveal.in {
+        opacity: 1;
+        transform: none;
+      }
+
+      /* ---------- nav ---------- */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        background: rgba(9, 14, 28, 0.78);
+        border-bottom: 1px solid var(--line);
+      }
+      .nav .wrap {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        height: 58px;
+      }
+      .brand {
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: var(--text);
+      }
+      .brand:hover {
+        text-decoration: none;
+      }
+      .brand svg {
+        width: 28px;
+        height: 28px;
+      }
+      .nav-links {
+        margin-left: auto;
+        display: flex;
+        gap: 0.15rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .nav-links::-webkit-scrollbar {
+        display: none;
+      }
+      .nav-links a {
+        color: var(--muted);
+        padding: 0.4rem 0.7rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+        background: var(--card-2);
+        text-decoration: none;
+      }
+
+      /* ---------- hero ---------- */
+      .hero {
+        position: relative;
+        padding: 5.5rem 0 4.5rem;
+        overflow: hidden;
+        border-top: none;
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        inset: -30% -10% auto;
+        height: 130%;
+        background:
+          radial-gradient(55% 45% at 15% 25%, rgba(251, 146, 60, 0.2), transparent 65%),
+          radial-gradient(50% 45% at 85% 30%, rgba(56, 189, 248, 0.18), transparent 65%),
+          radial-gradient(45% 45% at 55% 85%, rgba(167, 139, 250, 0.2), transparent 65%);
+        pointer-events: none;
+      }
+      .hero .wrap {
+        position: relative;
+      }
+      .hero h1 {
+        font-size: clamp(2.3rem, 5.6vw, 4.1rem);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        margin: 0.25rem 0 1rem;
+      }
+      .hero h1 .g {
+        color: var(--grad);
+      }
+      .hero h1 .o {
+        color: var(--oracle);
+      }
+      .hero h1 .p {
+        background: linear-gradient(90deg, var(--grad), var(--path), var(--oracle));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero .lead {
+        font-size: 1.15rem;
+        margin-bottom: 1.25rem;
+      }
+      .formula {
+        font-size: clamp(1.15rem, 2.4vw, 1.6rem);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0.8rem 1.2rem;
+        display: inline-block;
+        margin: 0.25rem 0 1.5rem;
+      }
+      .formula .g {
+        color: var(--grad);
+      }
+      .formula .o {
+        color: var(--oracle);
+      }
+      .formula .t {
+        color: var(--point);
+      }
+      .cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-bottom: 1.6rem;
+      }
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+      .facts span {
+        font-size: 0.95rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: var(--card-2);
+        border: 1px solid var(--line);
+      }
+      .facts b {
+        font-weight: 600;
+        color: var(--point);
+      }
+
+      /* ---------- overview / flow ---------- */
+      .two {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 2.25rem;
+        align-items: start;
+      }
+      @media (max-width: 880px) {
+        .two {
+          grid-template-columns: 1fr;
         }
-        * { box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-          margin: 0;
-          background: var(--bg);
-          color: var(--text);
-          font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
-          -webkit-font-smoothing: antialiased;
+      }
+      .flow {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+      .flow::before {
+        content: '';
+        position: absolute;
+        left: 19px;
+        top: 14px;
+        bottom: 14px;
+        width: 2px;
+        background: linear-gradient(
+          var(--grad),
+          var(--oracle),
+          var(--path),
+          var(--search),
+          var(--region),
+          var(--point)
+        );
+        opacity: 0.6;
+      }
+      .flow li {
+        position: relative;
+        padding: 0 0 1.1rem 3.3rem;
+      }
+      .flow .num {
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--bg-2);
+        border: 2px solid var(--line);
+        display: grid;
+        place-items: center;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+      .flow .body {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0.7rem 0.95rem;
+      }
+      .flow .body p {
+        margin: 0.2rem 0 0;
+        color: var(--muted);
+        font-size: 0.93rem;
+      }
+      .flow .slot .num,
+      .flow .slot .pill {
+        color: var(--c);
+        border-color: var(--c);
+      }
+      .flow .slot .body {
+        background: color-mix(in srgb, var(--c) 9%, transparent);
+        border-color: color-mix(in srgb, var(--c) 38%, transparent);
+      }
+      .flow .slot .pill {
+        margin-bottom: 0.25rem;
+      }
+      .flow .phase {
+        padding: 0.15rem 0 0.9rem 3.3rem;
+      }
+      .flow .phase span {
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: var(--muted);
+        background: var(--bg);
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        position: relative;
+      }
+      .flow .loop .body {
+        background: transparent;
+        border-style: dashed;
+        color: var(--muted);
+        font-size: 0.93rem;
+      }
+      .keyfacts {
+        display: grid;
+        gap: 0.9rem;
+        position: sticky;
+        top: 74px;
+      }
+      .keyfacts .card {
+        padding: 1rem 1.1rem;
+      }
+      .keyfacts .k {
+        font-size: 1.25rem;
+        margin-bottom: 0.2rem;
+      }
+      .keyfacts .k.g {
+        color: var(--grad);
+      }
+      .keyfacts .k.o {
+        color: var(--oracle);
+      }
+      .keyfacts .k.p {
+        color: var(--path);
+      }
+      .keyfacts p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.93rem;
+      }
+
+      /* ---------- interactive ---------- */
+      .demo {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
+        gap: 1.25rem;
+      }
+      @media (max-width: 900px) {
+        .demo {
+          grid-template-columns: 1fr;
         }
-        a { color: var(--oracle); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        code, pre, .mono {
-          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      }
+      .canvas-box {
+        position: relative;
+        background: #060a14;
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        overflow: hidden;
+      }
+      #pathCanvas {
+        display: block;
+        width: 100%;
+        aspect-ratio: 3 / 2;
+        touch-action: none;
+      }
+      #pathCanvas.dragging {
+        cursor: grabbing !important;
+      }
+      #phiCanvas {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 1.45;
+        touch-action: none;
+        cursor: crosshair;
+      }
+      .hint {
+        position: absolute;
+        top: 0.6rem;
+        left: 0.7rem;
+        font-size: 0.74rem;
+        color: var(--muted);
+        background: rgba(9, 14, 28, 0.7);
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        pointer-events: none;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.1rem;
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-top: 0.6rem;
+      }
+      .legend i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        margin-right: 0.4rem;
+        vertical-align: -1px;
+      }
+      .legend i.dash {
+        height: 2px;
+        width: 16px;
+        border-radius: 0;
+        vertical-align: 3px;
+      }
+      .controls {
+        display: grid;
+        gap: 1rem;
+        align-content: start;
+      }
+      .controls .card {
+        padding: 1rem 1.1rem;
+      }
+      .ctl {
+        display: grid;
+        gap: 0.25rem;
+        margin-bottom: 0.85rem;
+      }
+      .ctl:last-child {
+        margin-bottom: 0;
+      }
+      .ctl label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .ctl label output {
+        color: var(--text);
+        font-weight: 600;
+      }
+      input[type='range'] {
+        width: 100%;
+        accent-color: var(--point);
+      }
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      .check input {
+        accent-color: var(--region);
+        width: 16px;
+        height: 16px;
+      }
+      .presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .readout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem 0.9rem;
+        margin: 0;
+      }
+      .readout div {
+        border-top: 1px solid var(--line);
+        padding-top: 0.35rem;
+      }
+      .readout dt {
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .readout dd {
+        margin: 0;
+        font-weight: 600;
+      }
+      .ok {
+        color: var(--region);
+      }
+      .bad {
+        color: #f87171;
+      }
+      .demo-notes {
+        margin-top: 1.25rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0.9rem;
+      }
+      .demo-notes .card {
+        padding: 0.9rem 1rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .demo-notes b {
+        color: var(--text);
+      }
+
+      /* ---------- strategies ---------- */
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+      }
+      .tab {
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--muted);
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        font-size: 0.92rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .tab i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--c);
+        display: inline-block;
+      }
+      .tab.on {
+        color: var(--text);
+        border-color: var(--c);
+        background: color-mix(in srgb, var(--c) 14%, transparent);
+      }
+      .strategy-panel {
+        border-top: 3px solid var(--c);
+      }
+      .strategy-head {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+      }
+      .strategy-icon {
+        flex: 0 0 auto;
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--c);
+        background: color-mix(in srgb, var(--c) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+      }
+      .strategy-head .pill {
+        color: var(--c);
+        margin-bottom: 0.3rem;
+      }
+      .strategy-head p {
+        color: var(--muted);
+        margin-bottom: 0.4rem;
+      }
+      .providers {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 0.85rem;
+      }
+      .provider {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        display: flex;
+        flex-direction: column;
+      }
+      .provider header {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        align-items: baseline;
+        margin-bottom: 0.25rem;
+      }
+      .provider p {
+        color: var(--muted);
+        font-size: 0.9rem;
+        flex: 1;
+      }
+      .provider code.cfg {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--text);
+        padding: 0.35rem 0.5rem;
+      }
+      .tag {
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 800;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .tag-default {
+        background: rgba(52, 211, 153, 0.18);
+        color: var(--region);
+      }
+      .tag-wrap {
+        background: rgba(244, 114, 182, 0.18);
+        color: var(--search);
+      }
+      .tag-stretch {
+        background: rgba(167, 139, 250, 0.18);
+        color: var(--path);
+      }
+      .tag-exp {
+        background: rgba(250, 204, 21, 0.18);
+        color: var(--point);
+      }
+      .tag-custom {
+        background: rgba(56, 189, 248, 0.18);
+        color: var(--oracle);
+      }
+      .tag-off {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--muted);
+      }
+      .builder {
+        margin-top: 2rem;
+      }
+      .builder-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.8rem;
+        margin: 0.75rem 0 1rem;
+      }
+      .builder label {
+        display: grid;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .builder select {
+        font: inherit;
+        font-size: 0.9rem;
+        color: var(--text);
+        background: #060a14;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.5rem 0.6rem;
+      }
+      .builder .check {
+        align-self: end;
+        padding-bottom: 0.5rem;
+        color: var(--text);
+      }
+      .equiv {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.9rem;
+        align-items: baseline;
+      }
+      .equiv .pill {
+        color: var(--point);
+      }
+      .equiv strong {
+        font-size: 1.1rem;
+      }
+      .equiv p {
+        flex-basis: 100%;
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      /* ---------- what's different ---------- */
+      .diff {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+      }
+      .diff .card {
+        position: relative;
+        overflow: hidden;
+      }
+      .diff .icon {
+        font-size: 1.6rem;
+        margin-bottom: 0.4rem;
+      }
+      .diff h3 {
+        font-size: 1.05rem;
+      }
+      .diff p {
+        color: var(--muted);
+        font-size: 0.93rem;
+        margin: 0;
+      }
+      .diff .math {
+        color: var(--text);
+      }
+      .phases {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        margin-top: 0.75rem;
+      }
+      .phases div {
+        border-radius: 10px;
+        padding: 0.55rem 0.7rem;
+        font-size: 0.82rem;
+        border: 1px solid var(--line);
+      }
+      .phases .p1 {
+        border-color: color-mix(in srgb, var(--oracle) 45%, transparent);
+      }
+      .phases .p2 {
+        border-color: color-mix(in srgb, var(--search) 45%, transparent);
+      }
+      .phases b {
+        display: block;
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.15rem;
+      }
+      .phases .p1 b {
+        color: var(--oracle);
+      }
+      .phases .p2 b {
+        color: var(--search);
+      }
+
+      /* ---------- history ---------- */
+      .timeline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background: var(--line);
+      }
+      .timeline li {
+        position: relative;
+        padding: 0 0 2rem 2.2rem;
+      }
+      .timeline li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 7px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 3px solid var(--c, var(--path));
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--c, var(--path)) 25%, transparent);
+      }
+      .timeline .year {
+        font-weight: 800;
+        color: var(--c, var(--path));
+        letter-spacing: 0.04em;
+        font-size: 0.85rem;
+      }
+      .timeline h3 {
+        margin: 0.1rem 0 0.4rem;
+      }
+      .timeline p {
+        color: var(--muted);
+      }
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.5rem;
+      }
+      .frameworks {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.8rem;
+        margin-top: 0.75rem;
+      }
+      .frameworks .card {
+        padding: 0.9rem 1rem;
+      }
+      .frameworks h4 {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .frameworks .links {
+        margin-top: 0.4rem;
+      }
+
+      /* ---------- paper / footer ---------- */
+      .paper {
+        background: linear-gradient(180deg, transparent, rgba(167, 139, 250, 0.06));
+      }
+      .paper .card {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 1.5rem;
+        align-items: center;
+      }
+      @media (max-width: 760px) {
+        .paper .card {
+          grid-template-columns: 1fr;
         }
-        code { background: rgba(255, 255, 255, 0.07); padding: 0.1em 0.4em; border-radius: 6px; font-size: 0.9em; }
-        pre {
-          background: #060a14;
-          border: 1px solid var(--line);
-          border-radius: 12px;
-          padding: 1rem 1.1rem;
-          overflow: auto;
-          font-size: 0.85rem;
-          line-height: 1.5;
-          margin: 0;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 2rem 0 3rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      footer .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+        justify-content: space-between;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
         }
-        pre code { background: none; padding: 0; font-size: inherit; }
-        .math { font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", Georgia, serif; }
-        .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem; }
-        section { padding: 4.5rem 0; border-top: 1px solid var(--line); }
-        .eyebrow {
-          text-transform: uppercase;
-          letter-spacing: 0.14em;
-          font-size: 0.72rem;
-          color: var(--muted);
-          font-weight: 700;
-          margin: 0 0 0.5rem;
+        .reveal {
+          transition: none;
         }
-        h2 { font-size: clamp(1.7rem, 3.2vw, 2.4rem); line-height: 1.15; margin: 0 0 0.75rem; letter-spacing: -0.01em; }
-        h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
-        h4 { margin: 0 0 0.25rem; font-size: 1rem; }
-        p { margin: 0 0 0.75rem; }
-        .lead { color: var(--muted); font-size: 1.05rem; max-width: 66ch; margin: 0 0 2rem; }
-        .muted { color: var(--muted); }
-        .small { font-size: 0.88rem; }
         .btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.65rem 1.1rem;
-          border-radius: 999px;
-          border: 1px solid var(--line);
-          background: var(--card-2);
-          color: var(--text);
-          font-weight: 600;
-          font-size: 0.95rem;
-          cursor: pointer;
-          font-family: inherit;
-          transition: transform 0.15s, background 0.15s, border-color 0.15s;
+          transition: none;
         }
-        .btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.11); text-decoration: none; }
-        .btn.primary { background: linear-gradient(135deg, var(--grad), var(--path) 55%, var(--oracle)); color: #0b1020; border: none; }
-        .btn.small { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
-        .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 1.25rem; }
-        .pill {
-          display: inline-block;
-          font-size: 0.68rem;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          padding: 0.12rem 0.55rem;
-          border-radius: 999px;
-          border: 1px solid currentColor;
-          line-height: 1.6;
-        }
-        .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
-        .reveal.in { opacity: 1; transform: none; }
+      }
+    </style>
+  <!-- manifest:seo:start (generated by scripts/apply-seo.ts — do not edit) -->
+  <link rel="canonical" href="https://games.cognotik.com/optimization/QQN/index.html" />
+  <meta name="description" content="Standalone · optimization" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Mathematical Explorations" />
+  <meta property="og:title" content="Quadratic Quasi-Newton" />
+  <meta property="og:description" content="Standalone · optimization" />
+  <meta property="og:url" content="https://games.cognotik.com/optimization/QQN/index.html" />
+  <meta property="og:image" content="https://games.cognotik.com/assets/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Quadratic Quasi-Newton" />
+  <meta name="twitter:description" content="Standalone · optimization" />
+  <meta name="twitter:image" content="https://games.cognotik.com/assets/og-image.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Quadratic Quasi-Newton",
+    "description": "Standalone · optimization",
+    "url": "https://games.cognotik.com/optimization/QQN/index.html",
+    "image": "https://games.cognotik.com/assets/og-image.png",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "Mathematical Explorations",
+      "url": "https://games.cognotik.com"
+    }
+  }
+  </script>
+  <!-- manifest:seo:end -->
+</head>
+  <body>
+    <!-- ============================ NAV ============================ -->
+    <nav class="nav" aria-label="Page">
+      <div class="wrap">
+        <a class="brand" href="#top">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path
+              d="M4 26 C 10 20, 12 14, 16 12 S 26 6, 28 4"
+              fill="none"
+              stroke="#a78bfa"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+            <path d="M4 26 L 13 19" stroke="#fb923c" stroke-width="3" stroke-linecap="round" />
+            <path d="M4 26 L 28 4" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3" />
+            <circle cx="4" cy="26" r="3" fill="#e6eaf2" />
+            <circle cx="16" cy="12" r="3" fill="#facc15" />
+          </svg>
+          QQN
+        </a>
+        <div class="nav-links">
+          <a href="#overview">Overview</a>
+          <a href="#interactive">Interactive</a>
+          <a href="#strategies">Strategies</a>
+          <a href="#different">What’s different</a>
+          <a href="#history">History</a>
+          <a href="#paper">Paper</a>
+        </div>
+      </div>
+    </nav>
 
-        /* ---------- nav ---------- */
-        .nav {
-          position: sticky;
-          top: 0;
-          z-index: 50;
-          backdrop-filter: blur(14px);
-          -webkit-backdrop-filter: blur(14px);
-          background: rgba(9, 14, 28, 0.78);
-          border-bottom: 1px solid var(--line);
-        }
-        .nav .wrap { display: flex; align-items: center; gap: 1rem; height: 58px; }
-        .brand { font-weight: 800; display: flex; align-items: center; gap: 0.55rem; color: var(--text); }
-        .brand:hover { text-decoration: none; }
-        .brand svg { width: 28px; height: 28px; }
-        .nav-links { margin-left: auto; display: flex; gap: 0.15rem; overflow-x: auto; scrollbar-width: none; }
-        .nav-links::-webkit-scrollbar { display: none; }
-        .nav-links a { color: var(--muted); padding: 0.4rem 0.7rem; border-radius: 8px; font-size: 0.9rem; white-space: nowrap; }
-        .nav-links a:hover { color: var(--text); background: var(--card-2); text-decoration: none; }
-
-        /* ---------- hero ---------- */
-        .hero { position: relative; padding: 5.5rem 0 4.5rem; overflow: hidden; border-top: none; }
-        .hero::before {
-          content: "";
-          position: absolute;
-          inset: -30% -10% auto;
-          height: 130%;
-          background:
-            radial-gradient(55% 45% at 15% 25%, rgba(251, 146, 60, 0.2), transparent 65%),
-            radial-gradient(50% 45% at 85% 30%, rgba(56, 189, 248, 0.18), transparent 65%),
-            radial-gradient(45% 45% at 55% 85%, rgba(167, 139, 250, 0.2), transparent 65%);
-          pointer-events: none;
-        }
-        .hero .wrap { position: relative; }
-        .hero h1 { font-size: clamp(2.3rem, 5.6vw, 4.1rem); line-height: 1.05; letter-spacing: -0.02em; margin: 0.25rem 0 1rem; }
-        .hero h1 .g { color: var(--grad); }
-        .hero h1 .o { color: var(--oracle); }
-        .hero h1 .p {
-          background: linear-gradient(90deg, var(--grad), var(--path), var(--oracle));
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-        }
-        .hero .lead { font-size: 1.15rem; margin-bottom: 1.25rem; }
-        .formula {
-          font-size: clamp(1.15rem, 2.4vw, 1.6rem);
-          background: var(--card);
-          border: 1px solid var(--line);
-          border-radius: 12px;
-          padding: 0.8rem 1.2rem;
-          display: inline-block;
-          margin: 0.25rem 0 1.5rem;
-        }
-        .formula .g { color: var(--grad); }
-        .formula .o { color: var(--oracle); }
-        .formula .t { color: var(--point); }
-        .cta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.6rem; }
-        .facts { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-        .facts span {
-          font-size: 0.95rem;
-          padding: 0.35rem 0.85rem;
-          border-radius: 999px;
-          background: var(--card-2);
-          border: 1px solid var(--line);
-        }
-        .facts b { font-weight: 600; color: var(--point); }
-
-        /* ---------- overview / flow ---------- */
-        .two { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 2.25rem; align-items: start; }
-        @media (max-width: 880px) { .two { grid-template-columns: 1fr; } }
-        .flow { list-style: none; margin: 0; padding: 0; position: relative; }
-        .flow::before {
-          content: "";
-          position: absolute;
-          left: 19px;
-          top: 14px;
-          bottom: 14px;
-          width: 2px;
-          background: linear-gradient(var(--grad), var(--oracle), var(--path), var(--search), var(--region), var(--point));
-          opacity: 0.6;
-        }
-        .flow li { position: relative; padding: 0 0 1.1rem 3.3rem; }
-        .flow .num {
-          position: absolute;
-          left: 6px;
-          top: 2px;
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: var(--bg-2);
-          border: 2px solid var(--line);
-          display: grid;
-          place-items: center;
-          font-size: 0.78rem;
-          font-weight: 800;
-        }
-        .flow .body { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.95rem; }
-        .flow .body p { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.93rem; }
-        .flow .slot .num, .flow .slot .pill { color: var(--c); border-color: var(--c); }
-        .flow .slot .body {
-          background: color-mix(in srgb, var(--c) 9%, transparent);
-          border-color: color-mix(in srgb, var(--c) 38%, transparent);
-        }
-        .flow .slot .pill { margin-bottom: 0.25rem; }
-        .flow .phase { padding: 0.15rem 0 0.9rem 3.3rem; }
-        .flow .phase span {
-          font-size: 0.72rem;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          font-weight: 800;
-          color: var(--muted);
-          background: var(--bg);
-          padding: 0.2rem 0.6rem;
-          border-radius: 6px;
-          border: 1px solid var(--line);
-          position: relative;
-        }
-        .flow .loop .body { background: transparent; border-style: dashed; color: var(--muted); font-size: 0.93rem; }
-        .keyfacts { display: grid; gap: 0.9rem; position: sticky; top: 74px; }
-        .keyfacts .card { padding: 1rem 1.1rem; }
-        .keyfacts .k { font-size: 1.25rem; margin-bottom: 0.2rem; }
-        .keyfacts .k.g { color: var(--grad); }
-        .keyfacts .k.o { color: var(--oracle); }
-        .keyfacts .k.p { color: var(--path); }
-        .keyfacts p { margin: 0; color: var(--muted); font-size: 0.93rem; }
-
-        /* ---------- interactive ---------- */
-        .demo { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr); gap: 1.25rem; }
-        @media (max-width: 900px) { .demo { grid-template-columns: 1fr; } }
-        .canvas-box { position: relative; background: #060a14; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
-        #pathCanvas { display: block; width: 100%; aspect-ratio: 3 / 2; touch-action: none; }
-        #pathCanvas.dragging { cursor: grabbing !important; }
-        #phiCanvas { display: block; width: 100%; aspect-ratio: 4 / 1.45; touch-action: none; cursor: crosshair; }
-        .hint {
-          position: absolute;
-          top: 0.6rem;
-          left: 0.7rem;
-          font-size: 0.74rem;
-          color: var(--muted);
-          background: rgba(9, 14, 28, 0.7);
-          padding: 0.2rem 0.55rem;
-          border-radius: 6px;
-          pointer-events: none;
-        }
-        .legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; font-size: 0.82rem; color: var(--muted); margin-top: 0.6rem; }
-        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 0.4rem; vertical-align: -1px; }
-        .legend i.dash { height: 2px; width: 16px; border-radius: 0; vertical-align: 3px; }
-        .controls { display: grid; gap: 1rem; align-content: start; }
-        .controls .card { padding: 1rem 1.1rem; }
-        .ctl { display: grid; gap: 0.25rem; margin-bottom: 0.85rem; }
-        .ctl:last-child { margin-bottom: 0; }
-        .ctl label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); }
-        .ctl label output { color: var(--text); font-weight: 600; }
-        input[type="range"] { width: 100%; accent-color: var(--point); }
-        .check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; }
-        .check input { accent-color: var(--region); width: 16px; height: 16px; }
-        .presets { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-        .readout { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 0.9rem; margin: 0; }
-        .readout div { border-top: 1px solid var(--line); padding-top: 0.35rem; }
-        .readout dt { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
-        .readout dd { margin: 0; font-weight: 600; }
-        .ok { color: var(--region); }
-        .bad { color: #f87171; }
-        .demo-notes { margin-top: 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.9rem; }
-        .demo-notes .card { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--muted); }
-        .demo-notes b { color: var(--text); }
-
-        /* ---------- strategies ---------- */
-        .tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
-        .tab {
-          border: 1px solid var(--line);
-          background: var(--card);
-          color: var(--muted);
-          padding: 0.55rem 1rem;
-          border-radius: 999px;
-          cursor: pointer;
-          font: inherit;
-          font-weight: 600;
-          font-size: 0.92rem;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .tab i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); display: inline-block; }
-        .tab.on { color: var(--text); border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
-        .strategy-panel { border-top: 3px solid var(--c); }
-        .strategy-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.25rem; }
-        .strategy-icon {
-          flex: 0 0 auto;
-          width: 54px;
-          height: 54px;
-          border-radius: 14px;
-          display: grid;
-          place-items: center;
-          font-size: 1.6rem;
-          font-weight: 800;
-          color: var(--c);
-          background: color-mix(in srgb, var(--c) 14%, transparent);
-          border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
-        }
-        .strategy-head .pill { color: var(--c); margin-bottom: 0.3rem; }
-        .strategy-head p { color: var(--muted); margin-bottom: 0.4rem; }
-        .providers { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.85rem; }
-        .provider { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 0.9rem 1rem; display: flex; flex-direction: column; }
-        .provider header { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; margin-bottom: 0.25rem; }
-        .provider p { color: var(--muted); font-size: 0.9rem; flex: 1; }
-        .provider code.cfg { display: block; font-size: 0.78rem; color: var(--text); padding: 0.35rem 0.5rem; }
-        .tag { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; padding: 0.1rem 0.5rem; border-radius: 999px; white-space: nowrap; }
-        .tag-default { background: rgba(52, 211, 153, 0.18); color: var(--region); }
-        .tag-wrap { background: rgba(244, 114, 182, 0.18); color: var(--search); }
-        .tag-stretch { background: rgba(167, 139, 250, 0.18); color: var(--path); }
-        .tag-exp { background: rgba(250, 204, 21, 0.18); color: var(--point); }
-        .tag-custom { background: rgba(56, 189, 248, 0.18); color: var(--oracle); }
-        .tag-off { background: rgba(255, 255, 255, 0.1); color: var(--muted); }
-        .builder { margin-top: 2rem; }
-        .builder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; margin: 0.75rem 0 1rem; }
-        .builder label { display: grid; gap: 0.3rem; font-size: 0.8rem; color: var(--muted); }
-        .builder select {
-          font: inherit;
-          font-size: 0.9rem;
-          color: var(--text);
-          background: #060a14;
-          border: 1px solid var(--line);
-          border-radius: 10px;
-          padding: 0.5rem 0.6rem;
-        }
-        .builder .check { align-self: end; padding-bottom: 0.5rem; color: var(--text); }
-        .equiv { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; align-items: baseline; }
-        .equiv .pill { color: var(--point); }
-        .equiv strong { font-size: 1.1rem; }
-        .equiv p { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 0.92rem; }
-
-        /* ---------- what's different ---------- */
-        .diff { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
-        .diff .card { position: relative; overflow: hidden; }
-        .diff .icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
-        .diff h3 { font-size: 1.05rem; }
-        .diff p { color: var(--muted); font-size: 0.93rem; margin: 0; }
-        .diff .math { color: var(--text); }
-        .phases { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.75rem; }
-        .phases div { border-radius: 10px; padding: 0.55rem 0.7rem; font-size: 0.82rem; border: 1px solid var(--line); }
-        .phases .p1 { border-color: color-mix(in srgb, var(--oracle) 45%, transparent); }
-        .phases .p2 { border-color: color-mix(in srgb, var(--search) 45%, transparent); }
-        .phases b { display: block; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.15rem; }
-        .phases .p1 b { color: var(--oracle); }
-        .phases .p2 b { color: var(--search); }
-
-        /* ---------- history ---------- */
-        .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
-        .timeline::before { content: ""; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
-        .timeline li { position: relative; padding: 0 0 2rem 2.2rem; }
-        .timeline li::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 7px;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: var(--bg);
-          border: 3px solid var(--c, var(--path));
-          box-shadow: 0 0 0 4px color-mix(in srgb, var(--c, var(--path)) 25%, transparent);
-        }
-        .timeline .year { font-weight: 800; color: var(--c, var(--path)); letter-spacing: 0.04em; font-size: 0.85rem; }
-        .timeline h3 { margin: 0.1rem 0 0.4rem; }
-        .timeline p { color: var(--muted); }
-        .links { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.5rem; }
-        .frameworks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin-top: 0.75rem; }
-        .frameworks .card { padding: 0.9rem 1rem; }
-        .frameworks h4 { display: flex; gap: 0.5rem; align-items: center; }
-        .frameworks .links { margin-top: 0.4rem; }
-
-        /* ---------- paper / footer ---------- */
-        .paper { background: linear-gradient(180deg, transparent, rgba(167, 139, 250, 0.06)); }
-        .paper .card { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.5rem; align-items: center; }
-        @media (max-width: 760px) { .paper .card { grid-template-columns: 1fr; } }
-        footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--muted); font-size: 0.9rem; }
-        footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; justify-content: space-between; }
-        @media (prefers-reduced-motion: reduce) {
-          html { scroll-behavior: auto; }
-          .reveal { transition: none; }
-          .btn { transition: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <!-- ============================ NAV ============================ -->
-      <nav class="nav" aria-label="Page">
-        <div class="wrap">
-          <a class="brand" href="#top">
-            <svg viewBox="0 0 32 32" aria-hidden="true">
-              <path d="M4 26 C 10 20, 12 14, 16 12 S 26 6, 28 4" fill="none" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" />
-              <path d="M4 26 L 13 19" stroke="#fb923c" stroke-width="3" stroke-linecap="round" />
-              <path d="M4 26 L 28 4" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 3" />
-              <circle cx="4" cy="26" r="3" fill="#e6eaf2" />
-              <circle cx="16" cy="12" r="3" fill="#facc15" />
-            </svg>
-            QQN
-          </a>
-          <div class="nav-links">
-            <a href="#overview">Overview</a>
-            <a href="#interactive">Interactive</a>
-            <a href="#strategies">Strategies</a>
-            <a href="#different">What’s different</a>
-            <a href="#history">History</a>
-            <a href="#paper">Paper</a>
+    <!-- ============================ HERO ============================ -->
+    <header class="hero" id="top">
+      <div class="wrap">
+        <p class="eyebrow">QQN · Quadratic-Quasi-Newton Optimization</p>
+        <h1>
+          One <span class="p">curve</span>.<br />
+          <span class="g">Gradient</span> at one end, <span class="o">quasi-Newton</span> at the
+          other.
+        </h1>
+        <p class="lead">
+          QQN refuses the classic binary choice between a safe gradient step and a fast L-BFGS step.
+          It draws a quadratic path from one to the other and lets the line search find the sweet
+          spot — anchored to steepest descent for guaranteed progress, reaching the quasi-Newton
+          step whenever it’s earned.
+        </p>
+        <div class="formula math">
+          d(<span class="t">t</span>) = <span class="t">t</span>(1−<span class="t">t</span>)·<span
+            class="g"
+            >g̃</span
+          >
+          + <span class="t">t</span><sup>2</sup>·<span class="o">q</span>, &nbsp;
+          <span class="t">t</span> ∈ [0, 1]
+          <div class="small muted" style="font-size: 0.62em; line-height: 1.5; margin-top: 0.35rem">
+            <span class="g">g̃ = ‖q‖ · (−∇f) ⁄ ‖∇f‖</span> &nbsp;·&nbsp;
+            <span class="o">q = −H∇f</span> &nbsp;·&nbsp; only the <em>direction</em> of the
+            gradient enters the path
           </div>
         </div>
-      </nav>
+        <div class="cta">
+          <a class="btn primary" href="#interactive">▶ Play with the path</a>
+          <a class="btn" href="paper.pdf" target="_blank" rel="noopener">📄 Read the paper</a>
+          <a
+            class="btn"
+            href="https://github.com/SimiaCryptus/qqn-optimizer"
+            target="_blank"
+            rel="noopener"
+            >🦀 Rust</a
+          >
+          <a
+            class="btn"
+            href="https://github.com/SimiaCryptus/qqn-jax"
+            target="_blank"
+            rel="noopener"
+            >🐍 JAX</a
+          >
+          <a
+            class="btn"
+            href="https://github.com/SimiaCryptus/qqn-torch"
+            target="_blank"
+            rel="noopener"
+            >🔥 PyTorch</a
+          >
+        </div>
+        <div class="facts math">
+          <span><b>d(0)</b> = 0 — start at x</span>
+          <span><b>d′(0)</b> = g̃ ∝ −∇f — begins as steepest descent</span>
+          <span><b>d(1)</b> = −H∇f — ends at the oracle step</span>
+          <span><b>∇f → c·∇f</b> — identical path (scale-invariant)</span>
+        </div>
+      </div>
+    </header>
 
-      <!-- ============================ HERO ============================ -->
-      <header class="hero" id="top">
+    <main>
+      <!-- ============================ OVERVIEW / FLOWCHART ============================ -->
+      <section id="overview">
         <div class="wrap">
-          <p class="eyebrow">QQN · Quadratic-Quasi-Newton Optimization</p>
-          <h1>
-            One <span class="p">curve</span>.<br />
-            <span class="g">Gradient</span> at one end, <span class="o">quasi-Newton</span> at the other.
-          </h1>
+          <p class="eyebrow">Illustrated summary</p>
+          <h2>One iteration, step by step</h2>
           <p class="lead">
-            QQN refuses the classic binary choice between a safe gradient step and a fast L-BFGS step. It draws a
-            quadratic path from one to the other and lets the line search find the sweet spot — anchored to steepest
-            descent for guaranteed progress, reaching the quasi-Newton step whenever it’s earned.
+            Every iteration of QQN runs the same loop. Four of the steps are
+            <em>strategy slots</em> — pluggable components with a fixed interface. Everything else
+            is glue that never changes.
           </p>
-          <div class="formula math">
-             d(<span class="t">t</span>) = <span class="t">t</span>(1−<span class="t">t</span>)·<span class="g">g̃</span> +
-             <span class="t">t</span><sup>2</sup>·<span class="o">q</span>, &nbsp; <span class="t">t</span> ∈ [0, 1]
-             <div class="small muted" style="font-size: 0.62em; line-height: 1.5; margin-top: 0.35rem">
-               <span class="g">g̃ = ‖q‖ · (−∇f) ⁄ ‖∇f‖</span> &nbsp;·&nbsp; <span class="o">q = −H∇f</span> &nbsp;·&nbsp;
-               only the <em>direction</em> of the gradient enters the path
-             </div>
-          </div>
-          <div class="cta">
-            <a class="btn primary" href="#interactive">▶ Play with the path</a>
-            <a class="btn" href="paper.pdf" target="_blank" rel="noopener">📄 Read the paper</a>
-            <a class="btn" href="https://github.com/SimiaCryptus/qqn-optimizer" target="_blank" rel="noopener">🦀 Rust</a>
-            <a class="btn" href="https://github.com/SimiaCryptus/qqn-jax" target="_blank" rel="noopener">🐍 JAX</a>
-            <a class="btn" href="https://github.com/SimiaCryptus/qqn-torch" target="_blank" rel="noopener">🔥 PyTorch</a>
-          </div>
-          <div class="facts math">
-            <span><b>d(0)</b> = 0 — start at x</span>
-           <span><b>d′(0)</b> = g̃ ∝ −∇f — begins as steepest descent</span>
-           <span><b>d(1)</b> = −H∇f — ends at the oracle step</span>
-           <span><b>∇f → c·∇f</b> — identical path (scale-invariant)</span>
-          </div>
-        </div>
-      </header>
-
-      <main>
-        <!-- ============================ OVERVIEW / FLOWCHART ============================ -->
-        <section id="overview">
-          <div class="wrap">
-            <p class="eyebrow">Illustrated summary</p>
-            <h2>One iteration, step by step</h2>
-            <p class="lead">
-              Every iteration of QQN runs the same loop. Four of the steps are <em>strategy slots</em> — pluggable
-              components with a fixed interface. Everything else is glue that never changes.
-            </p>
-            <div class="two">
-              <ol class="flow reveal">
-                <li class="phase"><span>Phase 1 · Orient</span></li>
-                <li>
-                  <span class="num">1</span>
-                  <div class="body">
-                    <h4>Evaluate</h4>
-                    <p>Compute <span class="math">f(x)</span> and <span class="math">∇f(x)</span> at the current iterate.</p>
-                  </div>
-                </li>
-                <li class="slot" style="--c: var(--grad)">
-                  <span class="num">2</span>
-                  <div class="body">
-                    <span class="pill">slot · Gradient</span>
-                    <h4>Steepest-descent direction</h4>
-                   <p><span class="math">g̃ = ‖q‖·(−∇f)/‖∇f‖</span> — the gradient <em>direction</em>, rescaled to the length of the oracle step. It sets the path’s tangent at <span class="math">t = 0</span> (the anchor that guarantees a descent direction always exists) while cancelling <span class="math">‖∇f‖</span>, so the path never stretches with the gradient’s magnitude.</p>
-                  </div>
-                </li>
-                <li class="slot" style="--c: var(--oracle)">
-                  <span class="num">3</span>
-                  <div class="body">
-                    <span class="pill">slot · Oracle</span>
-                    <h4>Quasi-Newton endpoint</h4>
-                    <p><span class="math">q = −H∇f</span> from the oracle (L-BFGS two-loop recursion by default). It may be aggressive — it does <em>not</em> need to be a descent direction on its own.</p>
-                  </div>
-                </li>
-                <li>
-                  <span class="num">4</span>
-                  <div class="body">
-                    <h4>Build the quadratic path</h4>
-                   <p><span class="math">d(t) = t(1−t)·g̃ + t²·q</span>. A single 1-D search space of <em>states</em> <span class="math">x + d(t)</span>, from “barely moved along −∇f” to “full oracle step”. Because the gradient leg carries the oracle’s length, <span class="math">t</span> means the same thing from iteration to iteration.</p>
-                  </div>
-                </li>
-                <li class="phase"><span>Phase 2 · Step</span></li>
-                <li class="slot" style="--c: var(--search)">
-                  <span class="num">5</span>
-                  <div class="body">
-                    <span class="pill">slot · Search</span>
-                    <h4>Walk the path</h4>
-                    <p>The line search probes <span class="math">t ∈ [0, 1]</span> directly (Armijo backtracking by default, optionally refined by a cubic Hermite spline fit to every probe) and selects <span class="math">t*</span>.</p>
-                  </div>
-                </li>
-                <li class="slot" style="--c: var(--region)">
-                  <span class="num">6</span>
-                  <div class="body">
-                    <span class="pill">slot · Region</span>
-                    <h4>Project every probe</h4>
-                    <p>Each candidate is remapped, <span class="math">project<sub>R</sub>(x, x + d(t))</span> — box clip, orthant, trust-region sphere… — so the search navigates the <em>feasible</em> path. Identity when unused.</p>
-                  </div>
-                </li>
-                <li>
-                  <span class="num">7</span>
-                  <div class="body">
-                    <h4>Accept</h4>
-                    <p><span class="math">x ← x + d(t*)</span>, only if sufficient decrease holds: <span class="math">f(x_new) ≤ f(x) + c₁⟨∇f, d(t*)⟩</span>.</p>
-                  </div>
-                </li>
-                <li>
-                  <span class="num">8</span>
-                  <div class="body">
-                    <h4>Learn</h4>
-                    <p>Oracle ingests the curvature pair <span class="math">(s, y) = (x_new − x, ∇f_new − ∇f)</span> (admitted only if <span class="math">⟨y, s⟩ &gt; ε</span>); region adapts its state (e.g. trust radius via <span class="math">ρ = ared / pred</span>).</p>
-                  </div>
-                </li>
-                <li class="loop">
-                  <span class="num">↺</span>
-                  <div class="body">Repeat until <span class="math">‖∇f‖ ≤ tol</span> or <span class="math">iter ≥ maxiter</span>.</div>
-                </li>
-              </ol>
-              <aside class="keyfacts reveal">
-                <div class="card">
-                 <div class="k math g">d′(0) = g̃ ∝ −∇f</div>
-                 <p>The directional derivative at the origin is <span class="math">⟨∇f, g̃⟩ = −‖q‖·‖∇f‖ &lt; 0</span>. No matter how poor the oracle is, the <em>beginning</em> of the path always decreases <span class="math">f</span>. This single fact is what makes global convergence provable.</p>
-                </div>
-                <div class="card">
-                  <div class="k math o">d(1) = −H∇f</div>
-                  <p>Whatever the oracle proposes is reachable exactly at <span class="math">t = 1</span>. Near a well-conditioned minimum the search lands there, and QQN inherits L-BFGS’s superlinear convergence.</p>
-                </div>
-                <div class="card">
-                  <div class="k math p">0 &lt; t &lt; 1</div>
-                  <p>A smooth blend, weighting the gradient by <span class="math">t(1−t)</span> and the oracle by <span class="math">t²</span>. The right blend is <em>discovered by the search</em>, not hand-tuned — “which direction?” becomes “where on the curve?”.</p>
-                </div>
-                <div class="card">
-                 <div class="k">Scale-invariant by construction</div>
-                 <p>Only the gradient’s <em>direction</em> enters the path: <span class="math">g̃ = ‖q‖·(−∇f)/‖∇f‖</span>, so <span class="math">‖∇f‖</span> cancels. Multiply the objective (or the gradient) by any <span class="math">c &gt; 0</span> and <span class="math">d(t)</span> — hence the entire 1-D search space — is unchanged. The oracle alone sets the scale.</p>
-               </div>
-               <div class="card">
-                  <div class="k">Why not a straight line?</div>
-                 <p>A linear blend <span class="math">(1−t)g̃ + t·q</span> starts at <span class="math">g̃</span> with full magnitude — you can’t take a tiny step. The quadratic path passes <em>through</em> the origin tangentially, so arbitrarily small, guaranteed-valid steps exist along the same curve.</p>
-                </div>
-              </aside>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============================ INTERACTIVE ============================ -->
-        <section id="interactive">
-          <div class="wrap">
-            <p class="eyebrow">Interactive illustration</p>
-            <h2>Drag the directions. Slide along the path.</h2>
-            <p class="lead">
-              Drag the <span style="color: var(--grad); font-weight: 600">orange</span> handle to set the gradient direction
-              <span class="math">−∇f</span> and the <span style="color: var(--oracle); font-weight: 600">blue</span> handle to set
-              the oracle direction <span class="math">−H∇f</span>. The background is a toy quadratic landscape consistent with
-              that gradient; the lower plot is what the line search actually sees:
-              <span class="math">φ(t) = f(x + d(t)) − f(x)</span>.
-             Note that only the <em>direction</em> of the orange handle moves the curve: the gradient leg is rescaled to the
-             oracle step’s length (the faint dashed orange arrow <span class="math">g̃</span>), so stretching
-             <span class="math">−∇f</span> leaves <span class="math">d(t)</span> exactly where it is.
-            </p>
-            <div class="demo reveal">
-              <div>
-                <div class="canvas-box">
-                  <canvas id="pathCanvas" aria-label="Interactive quadratic path between the gradient and oracle directions"></canvas>
-                 <div class="hint">drag the handles · contours = toy f · the path uses ∇f’s direction only</div>
-                </div>
-                <div class="legend">
-                 <span><i style="background: var(--grad)"></i>−∇f (gradient — direction only)</span>
-                 <span><i style="background: var(--oracle)"></i>q = −H∇f (oracle)</span>
-                  <span><i style="background: var(--path)"></i>path d(t)</span>
-                  <span><i style="background: var(--point)"></i>x + d(t)</span>
-                 <span><i class="dash" style="background: var(--grad)"></i>g̃ = ‖q‖·(−∇f)/‖∇f‖ · leg t(1−t)·g̃</span>
-                 <span><i class="dash" style="background: var(--oracle)"></i>t²·q</span>
-                  <span><i style="background: var(--region)"></i>trust region / projected path</span>
-                </div>
-                <div class="canvas-box" style="margin-top: 0.9rem">
-                  <canvas id="phiCanvas" aria-label="Objective value along the path as a function of t"></canvas>
-                  <div class="hint">φ(t) along the path · click/drag to set t</div>
-                </div>
-                <div class="legend">
-                  <span><i style="background: var(--path)"></i>φ(t) = f(x + d(t)) − f(x)</span>
-                  <span><i class="dash" style="background: var(--grad)"></i>Armijo threshold c₁⟨∇f, d(t)⟩ (c₁ = 0.1, exaggerated)</span>
-                  <span><i style="background: rgba(52, 211, 153, 0.5)"></i>accepted region</span>
-                  <span><i class="dash" style="background: var(--point)"></i>t* = argmin φ</span>
-                </div>
-              </div>
-              <div class="controls">
-                <div class="card">
-                  <div class="ctl">
-                    <label>path parameter <span class="math">t</span> <output id="outT">0.600</output></label>
-                    <input id="tSlider" type="range" min="0" max="1" step="0.001" value="0.6" />
-                  </div>
-                  <div class="ctl">
-                    <label>landscape condition number <span class="math">κ</span> <output id="outKappa">6</output></label>
-                    <input id="kappaSlider" type="range" min="1" max="25" step="0.5" value="6" />
-                  </div>
-                  <div class="ctl">
-                    <label class="check"><input id="regionToggle" type="checkbox" /> trust-region sphere (Region slot)</label>
-                  </div>
-                  <div class="ctl" id="radiusWrap" hidden>
-                    <label>radius <span class="math">Δ</span> <output id="outRadius">2.2</output></label>
-                    <input id="radiusSlider" type="range" min="0.2" max="6" step="0.1" value="2.2" />
-                  </div>
-                  <div class="presets">
-                    <button class="btn small" id="playBtn" type="button">▶ Animate t</button>
-                    <button class="btn small" type="button" data-preset="newton">Oracle = Newton step</button>
-                    <button class="btn small" type="button" data-preset="good">Decent oracle</button>
-                    <button class="btn small" type="button" data-preset="overshoot">Overshooting oracle</button>
-                    <button class="btn small" type="button" data-preset="poor">Uphill oracle</button>
-                    <button class="btn small" type="button" data-preset="reset">Reset</button>
-                  </div>
-                </div>
-                <div class="card">
-                  <dl class="readout mono">
-                    <div><dt>t</dt><dd id="outT2">—</dd></div>
-                    <div><dt>t(1−t) · gradient weight</dt><dd id="outWg">—</dd></div>
-                    <div><dt>t² · oracle weight</dt><dd id="outWq">—</dd></div>
-                    <div><dt>‖d(t)‖</dt><dd id="outLen">—</dd></div>
-                    <div><dt>φ(t) = f(x+d(t)) − f(x)</dt><dd id="outPhi">—</dd></div>
-                    <div><dt>Armijo test at t</dt><dd id="outArmijo">—</dd></div>
-                    <div><dt>t* = argmin φ</dt><dd id="outTstar">—</dd></div>
-                    <div><dt>φ(t*)</dt><dd id="outPhiStar">—</dd></div>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div class="demo-notes reveal">
-             <div class="card"><b>Drag the orange handle radially.</b> The path doesn’t budge. Only <span class="math">∇f</span>’s direction enters <span class="math">d(t)</span>; its magnitude cancels against <span class="math">‖q‖</span>. Rotating the handle <em>does</em> reshape the curve.</div>
-              <div class="card"><b>Try “Uphill oracle”.</b> Even when −H∇f points uphill, the start of the path still descends — the green accepted band hugs <span class="math">t → 0</span>. That is the convergence anchor.</div>
-              <div class="card"><b>Try “Oracle = Newton step”.</b> With κ large, the gradient alone zig-zags across the valley, but the path bends into the minimizer and <span class="math">t* → 1</span>. That is the speed.</div>
-              <div class="card"><b>Try the trust region.</b> Probes are projected onto the sphere <em>inside</em> the search; the green curve is the feasible path the line search actually walks.</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============================ STRATEGY SELECTOR ============================ -->
-        <section id="strategies">
-          <div class="wrap">
-            <p class="eyebrow">Strategy selector</p>
-            <h2>Four slots. Many providers.</h2>
-            <p class="lead">
-              Gradient, Oracle, Search and Region are conceptually orthogonal and independently swappable. Each is a
-              pure interface; providers plug in without touching the solver loop. Pick a slot to see what it does and who
-              can fill it — then build a configuration below and see which classical optimizer you just reproduced.
-            </p>
-            <div class="tabs" id="strategyTabs" role="tablist"></div>
-            <div class="card strategy-panel reveal" id="strategyPanel" role="tabpanel"></div>
-
-            <div class="builder card reveal">
-              <p class="eyebrow">Build your optimizer</p>
-              <h3>QQN as a configuration space</h3>
-              <p class="muted small">Classical methods are the points where one or two slots are fixed to a canonical choice.</p>
-              <div class="builder-grid">
-                <label>Oracle
-                  <select id="cfgOracle">
-                    <option value="lbfgs">lbfgs — L-BFGS (default)</option>
-                    <option value="momentum">momentum — heavy-ball</option>
-                    <option value="secant">secant — Barzilai–Borwein</option>
-                    <option value="anderson">anderson — Anderson mixing</option>
-                    <option value="shampoo">shampoo — preconditioned</option>
-                    <option value="gradient">custom — pure gradient (no-op)</option>
-                  </select>
-                </label>
-                <label>Search
-                  <select id="cfgSearch">
-                    <option value="armijo">armijo — backtracking (default)</option>
-                    <option value="backtracking">backtracking</option>
-                    <option value="strong_wolfe">strong_wolfe — Optax zoom</option>
-                    <option value="hager_zhang">hager_zhang — approx. Wolfe</option>
-                    <option value="bisection">bisection — exact line min</option>
-                    <option value="fixed">fixed — constant step</option>
-                  </select>
-                </label>
-                <label>Region
-                  <select id="cfgRegion">
-                    <option value="none">None (identity)</option>
-                    <option value="box">BoxRegion — bounds</option>
-                    <option value="orthant">OrthantRegion — sparsity</option>
-                    <option value="trust">TrustRegion — sphere</option>
-                  </select>
-                </label>
-                <label class="check"><input type="checkbox" id="cfgSpline" /> spline refinement</label>
-              </div>
-              <pre><code id="cfgCode"></code></pre>
-              <div class="equiv">
-                <span class="pill">reproduces</span>
-                <strong id="eqName"></strong>
-                <p id="eqNote"></p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============================ WHAT'S DIFFERENT ============================ -->
-        <section id="different">
-          <div class="wrap">
-            <p class="eyebrow">What’s different</p>
-            <h2>Five things QQN does that most optimizers don’t</h2>
-            <p class="lead">
-              None of these are exotic on their own. Together they turn “an L-BFGS variant” into an optimizer with a
-              provable descent guarantee and a genuinely modular architecture.
-            </p>
-            <div class="diff">
-              <div class="card reveal">
-                <div class="icon">🛡️</div>
-                <h3>Non-decreasing search</h3>
-                <p>
-                  Every accepted step must satisfy <span class="math">f(x + d(t)) ≤ f(x) + c₁⟨∇f, d(t)⟩</span>. The sequence of
-                  objective values is monotone — there are no “escape” steps, no learning-rate warm-ups, no hoping a bad step
-                  averages out later. If no acceptable state is found, the iteration fails loudly rather than moving uphill.
-                </p>
-              </div>
-              <div class="card reveal">
-                <div class="icon">📐</div>
-                <h3>Valid tiny steps ⇒ convergence proven</h3>
-                <p>
-                 Because <span class="math">d′(0) = g̃ = ‖q‖·(−∇f)/‖∇f‖</span> is a positive multiple of <span class="math">−∇f</span>,
-                 we have <span class="math">⟨∇f, d′(0)⟩ = −‖q‖·‖∇f‖ &lt; 0</span>:
-                  for any <span class="math">∇f ≠ 0</span> there is a <span class="math">t &gt; 0</span> that decreases
-                  <span class="math">f</span>. The search always has a valid fallback <em>on the same curve</em>, so global
-                  convergence holds regardless of how bad the oracle direction is — the oracle only has to be useful, never
-                  safe.
-                </p>
-              </div>
-              <div class="card reveal">
-                <div class="icon">🎯</div>
-                <h3>Deterministic objective function</h3>
-                <p>
-                  A line search compares <span class="math">f</span> at different probes; those comparisons are only meaningful
-                  if <span class="math">f(x)</span> is a function of <span class="math">x</span>. QQN treats the objective as
-                  deterministic — full-batch, or a minibatch held fixed for the whole iteration — instead of a noisy estimate
-                  that must be averaged over many small steps.
-                </p>
-              </div>
-              <div class="card reveal">
-                <div class="icon">🔁</div>
-                <h3>2-phase optimization loop</h3>
-                <p>
-                  Orientation and stepping are separated. First the path is constructed; then it is searched and the result is
-                  fed back. The original MindsEye implementation lives in the <code>opt/orient</code> package for exactly this
-                  reason — QQN was born as an <em>orienting</em> strategy.
-                </p>
-                <div class="phases">
-                  <div class="p1"><b>Phase 1 · Orient</b>gradient + oracle → <span class="math">d(t)</span></div>
-                  <div class="p2"><b>Phase 2 · Step</b>search + region → accept <span class="math">t*</span>, update state</div>
-                </div>
-              </div>
-              <div class="card reveal">
-                <div class="icon">🧩</div>
-                <h3>Strategy-provider pattern</h3>
-                <p>
-                  Gradient, Oracle, Search and Region are interfaces (<code>init</code> / <code>direction</code> or
-                  <code>project</code> / <code>update</code>). Providers are pure functions; combinators such as
-                  <code>Fallback</code>, <code>Blend</code> and <code>Sequential</code> compose them. State is threaded through
-                  one immutable <code>QQNState</code>, so the whole thing stays <code>jit</code>/<code>vmap</code>/<code>grad</code>
-                  friendly — and many classical optimizers fall out as particular slot choices.
-                </p>
-              </div>
-              <div class="card reveal">
-                <div class="icon">〰️</div>
-                <h3>Bonus: information-reusing search</h3>
-                <p>
-                  Every probe along <span class="math">d(t)</span> yields both a value and a directional derivative. The optional
-                  spline refinement fits a cubic Hermite spline through <em>all</em> probes and jumps to its stationary points —
-                  reusing gradient information a naive line search throws away.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============================ HISTORY ============================ -->
-        <section id="history">
-          <div class="wrap">
-            <p class="eyebrow">History</p>
-            <h2>From a Java hobby project to a paper and three ports</h2>
-            <p class="lead">QQN has been quietly training neural networks for the better part of a decade.</p>
-            <ol class="timeline">
-              <li class="reveal" style="--c: var(--grad)">
-                <span class="year">&lt; 2020</span>
-                <h3>Original implementation — MindsEye (Java)</h3>
-                <p>
-                  QQN first appeared as an orienting strategy in MindsEye, a Java deep-learning framework. It was used to train
-                  style-transfer and texture-synthesis models whose outputs are collected in the DeepArtist gallery — the
-                  “deterministic objective, non-decreasing search” philosophy dates from here.
-                </p>
-                <div class="links">
-                  <a class="btn small" href="https://github.com/SimiaCryptus/MindsEye/blob/master/src/main/java/com/simiacryptus/mindseye/opt/orient/QQN.java" target="_blank" rel="noopener">☕ QQN.java (actual implementation)</a>
-                  <a class="btn small" href="https://github.com/SimiaCryptus/MindseyeAll" target="_blank" rel="noopener">📦 MindsEye project</a>
-                  <a class="btn small" href="https://gallery.deepartist.org/" target="_blank" rel="noopener">🖼️ Image gallery</a>
+          <div class="two">
+            <ol class="flow reveal">
+              <li class="phase"><span>Phase 1 · Orient</span></li>
+              <li>
+                <span class="num">1</span>
+                <div class="body">
+                  <h4>Evaluate</h4>
+                  <p>
+                    Compute <span class="math">f(x)</span> and <span class="math">∇f(x)</span> at
+                    the current iterate.
+                  </p>
                 </div>
               </li>
-              <li class="reveal" style="--c: var(--path)">
-                <span class="year">2025</span>
-                <h3>Formal paper and Rust implementation</h3>
-                <p>
-                  The algorithm was written up formally — the quadratic path, its descent guarantee, and a benchmark suite —
-                  alongside a from-scratch Rust implementation, <code>qqn-optimizer</code>, used to produce the paper’s results.
-                </p>
-                <div class="links">
-                  <a class="btn small" href="paper.pdf" target="_blank" rel="noopener">📄 Paper (PDF)</a>
-                  <a class="btn small" href="http://dx.doi.org/10.13140/RG.2.2.15200.19206" target="_blank" rel="noopener">🔗 DOI</a>
-                  <a class="btn small" href="https://github.com/SimiaCryptus/qqn-optimizer" target="_blank" rel="noopener">🦀 qqn-optimizer</a>
+              <li class="slot" style="--c: var(--grad)">
+                <span class="num">2</span>
+                <div class="body">
+                  <span class="pill">slot · Gradient</span>
+                  <h4>Steepest-descent direction</h4>
+                  <p>
+                    <span class="math">g̃ = ‖q‖·(−∇f)/‖∇f‖</span> — the gradient <em>direction</em>,
+                    rescaled to the length of the oracle step. It sets the path’s tangent at
+                    <span class="math">t = 0</span> (the anchor that guarantees a descent direction
+                    always exists) while cancelling <span class="math">‖∇f‖</span>, so the path
+                    never stretches with the gradient’s magnitude.
+                  </p>
                 </div>
               </li>
-              <li class="reveal" style="--c: var(--oracle)">
-                <span class="year">2026</span>
-                <h3>Python variants and MNIST benchmarking</h3>
-                <p>
-                  Pure-functional ports for the major Python frameworks, generalising the design into the four strategy slots
-                  (oracles, regions, spline search) and benchmarking the whole configuration space on MNIST.
-                </p>
-                <div class="frameworks" id="frameworks"></div>
+              <li class="slot" style="--c: var(--oracle)">
+                <span class="num">3</span>
+                <div class="body">
+                  <span class="pill">slot · Oracle</span>
+                  <h4>Quasi-Newton endpoint</h4>
+                  <p>
+                    <span class="math">q = −H∇f</span> from the oracle (L-BFGS two-loop recursion by
+                    default). It may be aggressive — it does <em>not</em> need to be a descent
+                    direction on its own.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span class="num">4</span>
+                <div class="body">
+                  <h4>Build the quadratic path</h4>
+                  <p>
+                    <span class="math">d(t) = t(1−t)·g̃ + t²·q</span>. A single 1-D search space of
+                    <em>states</em> <span class="math">x + d(t)</span>, from “barely moved along
+                    −∇f” to “full oracle step”. Because the gradient leg carries the oracle’s
+                    length, <span class="math">t</span> means the same thing from iteration to
+                    iteration.
+                  </p>
+                </div>
+              </li>
+              <li class="phase"><span>Phase 2 · Step</span></li>
+              <li class="slot" style="--c: var(--search)">
+                <span class="num">5</span>
+                <div class="body">
+                  <span class="pill">slot · Search</span>
+                  <h4>Walk the path</h4>
+                  <p>
+                    The line search probes <span class="math">t ∈ [0, 1]</span> directly (Armijo
+                    backtracking by default, optionally refined by a cubic Hermite spline fit to
+                    every probe) and selects <span class="math">t*</span>.
+                  </p>
+                </div>
+              </li>
+              <li class="slot" style="--c: var(--region)">
+                <span class="num">6</span>
+                <div class="body">
+                  <span class="pill">slot · Region</span>
+                  <h4>Project every probe</h4>
+                  <p>
+                    Each candidate is remapped,
+                    <span class="math">project<sub>R</sub>(x, x + d(t))</span> — box clip, orthant,
+                    trust-region sphere… — so the search navigates the <em>feasible</em> path.
+                    Identity when unused.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span class="num">7</span>
+                <div class="body">
+                  <h4>Accept</h4>
+                  <p>
+                    <span class="math">x ← x + d(t*)</span>, only if sufficient decrease holds:
+                    <span class="math">f(x_new) ≤ f(x) + c₁⟨∇f, d(t*)⟩</span>.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span class="num">8</span>
+                <div class="body">
+                  <h4>Learn</h4>
+                  <p>
+                    Oracle ingests the curvature pair
+                    <span class="math">(s, y) = (x_new − x, ∇f_new − ∇f)</span> (admitted only if
+                    <span class="math">⟨y, s⟩ &gt; ε</span>); region adapts its state (e.g. trust
+                    radius via <span class="math">ρ = ared / pred</span>).
+                  </p>
+                </div>
+              </li>
+              <li class="loop">
+                <span class="num">↺</span>
+                <div class="body">
+                  Repeat until <span class="math">‖∇f‖ ≤ tol</span> or
+                  <span class="math">iter ≥ maxiter</span>.
+                </div>
               </li>
             </ol>
-          </div>
-        </section>
-
-        <!-- ============================ PAPER ============================ -->
-        <section id="paper" class="paper">
-          <div class="wrap">
-            <div class="card reveal">
-              <div>
-                <p class="eyebrow">Read more</p>
-                <h2 style="font-size: 1.6rem">The academic paper</h2>
-                <p class="muted">
-                  <em>Quadratic-Quasi-Newton Optimization: Combining Gradient and Quasi-Newton Directions Through Quadratic
-                  Interpolation.</em> Full derivation, convergence analysis and benchmarks.
+            <aside class="keyfacts reveal">
+              <div class="card">
+                <div class="k math g">d′(0) = g̃ ∝ −∇f</div>
+                <p>
+                  The directional derivative at the origin is
+                  <span class="math">⟨∇f, g̃⟩ = −‖q‖·‖∇f‖ &lt; 0</span>. No matter how poor the
+                  oracle is, the <em>beginning</em> of the path always decreases
+                  <span class="math">f</span>. This single fact is what makes global convergence
+                  provable.
                 </p>
-                <div class="cta" style="margin: 0">
-                  <a class="btn primary" href="paper.pdf" target="_blank" rel="noopener">📄 Open the PDF</a>
-                  <a class="btn" href="paper.pdf" download>⬇️ Download</a>
-                  <a class="btn" href="http://dx.doi.org/10.13140/RG.2.2.15200.19206" target="_blank" rel="noopener">🔗 DOI</a>
-                  <a class="btn" href="paper.html">🖥️ Embedded viewer</a>
+              </div>
+              <div class="card">
+                <div class="k math o">d(1) = −H∇f</div>
+                <p>
+                  Whatever the oracle proposes is reachable exactly at
+                  <span class="math">t = 1</span>. Near a well-conditioned minimum the search lands
+                  there, and QQN inherits L-BFGS’s superlinear convergence.
+                </p>
+              </div>
+              <div class="card">
+                <div class="k math p">0 &lt; t &lt; 1</div>
+                <p>
+                  A smooth blend, weighting the gradient by <span class="math">t(1−t)</span> and the
+                  oracle by <span class="math">t²</span>. The right blend is
+                  <em>discovered by the search</em>, not hand-tuned — “which direction?” becomes
+                  “where on the curve?”.
+                </p>
+              </div>
+              <div class="card">
+                <div class="k">Scale-invariant by construction</div>
+                <p>
+                  Only the gradient’s <em>direction</em> enters the path:
+                  <span class="math">g̃ = ‖q‖·(−∇f)/‖∇f‖</span>, so
+                  <span class="math">‖∇f‖</span> cancels. Multiply the objective (or the gradient)
+                  by any <span class="math">c &gt; 0</span> and <span class="math">d(t)</span> —
+                  hence the entire 1-D search space — is unchanged. The oracle alone sets the scale.
+                </p>
+              </div>
+              <div class="card">
+                <div class="k">Why not a straight line?</div>
+                <p>
+                  A linear blend <span class="math">(1−t)g̃ + t·q</span> starts at
+                  <span class="math">g̃</span> with full magnitude — you can’t take a tiny step. The
+                  quadratic path passes <em>through</em> the origin tangentially, so arbitrarily
+                  small, guaranteed-valid steps exist along the same curve.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ INTERACTIVE ============================ -->
+      <section id="interactive">
+        <div class="wrap">
+          <p class="eyebrow">Interactive illustration</p>
+          <h2>Drag the directions. Slide along the path.</h2>
+          <p class="lead">
+            Drag the <span style="color: var(--grad); font-weight: 600">orange</span> handle to set
+            the gradient direction <span class="math">−∇f</span> and the
+            <span style="color: var(--oracle); font-weight: 600">blue</span> handle to set the
+            oracle direction <span class="math">−H∇f</span>. The background is a toy quadratic
+            landscape consistent with that gradient; the lower plot is what the line search actually
+            sees: <span class="math">φ(t) = f(x + d(t)) − f(x)</span>. Note that only the
+            <em>direction</em> of the orange handle moves the curve: the gradient leg is rescaled to
+            the oracle step’s length (the faint dashed orange arrow <span class="math">g̃</span>), so
+            stretching <span class="math">−∇f</span> leaves <span class="math">d(t)</span> exactly
+            where it is.
+          </p>
+          <div class="demo reveal">
+            <div>
+              <div class="canvas-box">
+                <canvas
+                  id="pathCanvas"
+                  aria-label="Interactive quadratic path between the gradient and oracle directions"
+                ></canvas>
+                <div class="hint">
+                  drag the handles · contours = toy f · the path uses ∇f’s direction only
                 </div>
               </div>
-              <pre><code>QQN(
+              <div class="legend">
+                <span><i style="background: var(--grad)"></i>−∇f (gradient — direction only)</span>
+                <span><i style="background: var(--oracle)"></i>q = −H∇f (oracle)</span>
+                <span><i style="background: var(--path)"></i>path d(t)</span>
+                <span><i style="background: var(--point)"></i>x + d(t)</span>
+                <span
+                  ><i class="dash" style="background: var(--grad)"></i>g̃ = ‖q‖·(−∇f)/‖∇f‖ · leg
+                  t(1−t)·g̃</span
+                >
+                <span><i class="dash" style="background: var(--oracle)"></i>t²·q</span>
+                <span><i style="background: var(--region)"></i>trust region / projected path</span>
+              </div>
+              <div class="canvas-box" style="margin-top: 0.9rem">
+                <canvas
+                  id="phiCanvas"
+                  aria-label="Objective value along the path as a function of t"
+                ></canvas>
+                <div class="hint">φ(t) along the path · click/drag to set t</div>
+              </div>
+              <div class="legend">
+                <span><i style="background: var(--path)"></i>φ(t) = f(x + d(t)) − f(x)</span>
+                <span
+                  ><i class="dash" style="background: var(--grad)"></i>Armijo threshold c₁⟨∇f, d(t)⟩
+                  (c₁ = 0.1, exaggerated)</span
+                >
+                <span><i style="background: rgba(52, 211, 153, 0.5)"></i>accepted region</span>
+                <span><i class="dash" style="background: var(--point)"></i>t* = argmin φ</span>
+              </div>
+            </div>
+            <div class="controls">
+              <div class="card">
+                <div class="ctl">
+                  <label
+                    >path parameter <span class="math">t</span>
+                    <output id="outT">0.600</output></label
+                  >
+                  <input id="tSlider" type="range" min="0" max="1" step="0.001" value="0.6" />
+                </div>
+                <div class="ctl">
+                  <label
+                    >landscape condition number <span class="math">κ</span>
+                    <output id="outKappa">6</output></label
+                  >
+                  <input id="kappaSlider" type="range" min="1" max="25" step="0.5" value="6" />
+                </div>
+                <div class="ctl">
+                  <label class="check"
+                    ><input id="regionToggle" type="checkbox" /> trust-region sphere (Region
+                    slot)</label
+                  >
+                </div>
+                <div class="ctl" id="radiusWrap" hidden>
+                  <label
+                    >radius <span class="math">Δ</span> <output id="outRadius">2.2</output></label
+                  >
+                  <input id="radiusSlider" type="range" min="0.2" max="6" step="0.1" value="2.2" />
+                </div>
+                <div class="presets">
+                  <button class="btn small" id="playBtn" type="button">▶ Animate t</button>
+                  <button class="btn small" type="button" data-preset="newton">
+                    Oracle = Newton step
+                  </button>
+                  <button class="btn small" type="button" data-preset="good">Decent oracle</button>
+                  <button class="btn small" type="button" data-preset="overshoot">
+                    Overshooting oracle
+                  </button>
+                  <button class="btn small" type="button" data-preset="poor">Uphill oracle</button>
+                  <button class="btn small" type="button" data-preset="reset">Reset</button>
+                </div>
+              </div>
+              <div class="card">
+                <dl class="readout mono">
+                  <div>
+                    <dt>t</dt>
+                    <dd id="outT2">—</dd>
+                  </div>
+                  <div>
+                    <dt>t(1−t) · gradient weight</dt>
+                    <dd id="outWg">—</dd>
+                  </div>
+                  <div>
+                    <dt>t² · oracle weight</dt>
+                    <dd id="outWq">—</dd>
+                  </div>
+                  <div>
+                    <dt>‖d(t)‖</dt>
+                    <dd id="outLen">—</dd>
+                  </div>
+                  <div>
+                    <dt>φ(t) = f(x+d(t)) − f(x)</dt>
+                    <dd id="outPhi">—</dd>
+                  </div>
+                  <div>
+                    <dt>Armijo test at t</dt>
+                    <dd id="outArmijo">—</dd>
+                  </div>
+                  <div>
+                    <dt>t* = argmin φ</dt>
+                    <dd id="outTstar">—</dd>
+                  </div>
+                  <div>
+                    <dt>φ(t*)</dt>
+                    <dd id="outPhiStar">—</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <div class="demo-notes reveal">
+            <div class="card">
+              <b>Drag the orange handle radially.</b> The path doesn’t budge. Only
+              <span class="math">∇f</span>’s direction enters <span class="math">d(t)</span>; its
+              magnitude cancels against <span class="math">‖q‖</span>. Rotating the handle
+              <em>does</em> reshape the curve.
+            </div>
+            <div class="card">
+              <b>Try “Uphill oracle”.</b> Even when −H∇f points uphill, the start of the path still
+              descends — the green accepted band hugs <span class="math">t → 0</span>. That is the
+              convergence anchor.
+            </div>
+            <div class="card">
+              <b>Try “Oracle = Newton step”.</b> With κ large, the gradient alone zig-zags across
+              the valley, but the path bends into the minimizer and
+              <span class="math">t* → 1</span>. That is the speed.
+            </div>
+            <div class="card">
+              <b>Try the trust region.</b> Probes are projected onto the sphere <em>inside</em> the
+              search; the green curve is the feasible path the line search actually walks.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ STRATEGY SELECTOR ============================ -->
+      <section id="strategies">
+        <div class="wrap">
+          <p class="eyebrow">Strategy selector</p>
+          <h2>Four slots. Many providers.</h2>
+          <p class="lead">
+            Gradient, Oracle, Search and Region are conceptually orthogonal and independently
+            swappable. Each is a pure interface; providers plug in without touching the solver loop.
+            Pick a slot to see what it does and who can fill it — then build a configuration below
+            and see which classical optimizer you just reproduced.
+          </p>
+          <div class="tabs" id="strategyTabs" role="tablist"></div>
+          <div class="card strategy-panel reveal" id="strategyPanel" role="tabpanel"></div>
+
+          <div class="builder card reveal">
+            <p class="eyebrow">Build your optimizer</p>
+            <h3>QQN as a configuration space</h3>
+            <p class="muted small">
+              Classical methods are the points where one or two slots are fixed to a canonical
+              choice.
+            </p>
+            <div class="builder-grid">
+              <label
+                >Oracle
+                <select id="cfgOracle">
+                  <option value="lbfgs">lbfgs — L-BFGS (default)</option>
+                  <option value="momentum">momentum — heavy-ball</option>
+                  <option value="secant">secant — Barzilai–Borwein</option>
+                  <option value="anderson">anderson — Anderson mixing</option>
+                  <option value="shampoo">shampoo — preconditioned</option>
+                  <option value="gradient">custom — pure gradient (no-op)</option>
+                </select>
+              </label>
+              <label
+                >Search
+                <select id="cfgSearch">
+                  <option value="armijo">armijo — backtracking (default)</option>
+                  <option value="backtracking">backtracking</option>
+                  <option value="strong_wolfe">strong_wolfe — Optax zoom</option>
+                  <option value="hager_zhang">hager_zhang — approx. Wolfe</option>
+                  <option value="bisection">bisection — exact line min</option>
+                  <option value="fixed">fixed — constant step</option>
+                </select>
+              </label>
+              <label
+                >Region
+                <select id="cfgRegion">
+                  <option value="none">None (identity)</option>
+                  <option value="box">BoxRegion — bounds</option>
+                  <option value="orthant">OrthantRegion — sparsity</option>
+                  <option value="trust">TrustRegion — sphere</option>
+                </select>
+              </label>
+              <label class="check"
+                ><input type="checkbox" id="cfgSpline" /> spline refinement</label
+              >
+            </div>
+            <pre><code id="cfgCode"></code></pre>
+            <div class="equiv">
+              <span class="pill">reproduces</span>
+              <strong id="eqName"></strong>
+              <p id="eqNote"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ WHAT'S DIFFERENT ============================ -->
+      <section id="different">
+        <div class="wrap">
+          <p class="eyebrow">What’s different</p>
+          <h2>Five things QQN does that most optimizers don’t</h2>
+          <p class="lead">
+            None of these are exotic on their own. Together they turn “an L-BFGS variant” into an
+            optimizer with a provable descent guarantee and a genuinely modular architecture.
+          </p>
+          <div class="diff">
+            <div class="card reveal">
+              <div class="icon">🛡️</div>
+              <h3>Non-decreasing search</h3>
+              <p>
+                Every accepted step must satisfy
+                <span class="math">f(x + d(t)) ≤ f(x) + c₁⟨∇f, d(t)⟩</span>. The sequence of
+                objective values is monotone — there are no “escape” steps, no learning-rate
+                warm-ups, no hoping a bad step averages out later. If no acceptable state is found,
+                the iteration fails loudly rather than moving uphill.
+              </p>
+            </div>
+            <div class="card reveal">
+              <div class="icon">📐</div>
+              <h3>Valid tiny steps ⇒ convergence proven</h3>
+              <p>
+                Because <span class="math">d′(0) = g̃ = ‖q‖·(−∇f)/‖∇f‖</span> is a positive multiple
+                of <span class="math">−∇f</span>, we have
+                <span class="math">⟨∇f, d′(0)⟩ = −‖q‖·‖∇f‖ &lt; 0</span>: for any
+                <span class="math">∇f ≠ 0</span> there is a <span class="math">t &gt; 0</span> that
+                decreases <span class="math">f</span>. The search always has a valid fallback
+                <em>on the same curve</em>, so global convergence holds regardless of how bad the
+                oracle direction is — the oracle only has to be useful, never safe.
+              </p>
+            </div>
+            <div class="card reveal">
+              <div class="icon">🎯</div>
+              <h3>Deterministic objective function</h3>
+              <p>
+                A line search compares <span class="math">f</span> at different probes; those
+                comparisons are only meaningful if <span class="math">f(x)</span> is a function of
+                <span class="math">x</span>. QQN treats the objective as deterministic — full-batch,
+                or a minibatch held fixed for the whole iteration — instead of a noisy estimate that
+                must be averaged over many small steps.
+              </p>
+            </div>
+            <div class="card reveal">
+              <div class="icon">🔁</div>
+              <h3>2-phase optimization loop</h3>
+              <p>
+                Orientation and stepping are separated. First the path is constructed; then it is
+                searched and the result is fed back. The original MindsEye implementation lives in
+                the <code>opt/orient</code> package for exactly this reason — QQN was born as an
+                <em>orienting</em> strategy.
+              </p>
+              <div class="phases">
+                <div class="p1">
+                  <b>Phase 1 · Orient</b>gradient + oracle → <span class="math">d(t)</span>
+                </div>
+                <div class="p2">
+                  <b>Phase 2 · Step</b>search + region → accept <span class="math">t*</span>, update
+                  state
+                </div>
+              </div>
+            </div>
+            <div class="card reveal">
+              <div class="icon">🧩</div>
+              <h3>Strategy-provider pattern</h3>
+              <p>
+                Gradient, Oracle, Search and Region are interfaces (<code>init</code> /
+                <code>direction</code> or <code>project</code> / <code>update</code>). Providers are
+                pure functions; combinators such as <code>Fallback</code>, <code>Blend</code> and
+                <code>Sequential</code> compose them. State is threaded through one immutable
+                <code>QQNState</code>, so the whole thing stays
+                <code>jit</code>/<code>vmap</code>/<code>grad</code>
+                friendly — and many classical optimizers fall out as particular slot choices.
+              </p>
+            </div>
+            <div class="card reveal">
+              <div class="icon">〰️</div>
+              <h3>Bonus: information-reusing search</h3>
+              <p>
+                Every probe along <span class="math">d(t)</span> yields both a value and a
+                directional derivative. The optional spline refinement fits a cubic Hermite spline
+                through <em>all</em> probes and jumps to its stationary points — reusing gradient
+                information a naive line search throws away.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ HISTORY ============================ -->
+      <section id="history">
+        <div class="wrap">
+          <p class="eyebrow">History</p>
+          <h2>From a Java hobby project to a paper and three ports</h2>
+          <p class="lead">
+            QQN has been quietly training neural networks for the better part of a decade.
+          </p>
+          <ol class="timeline">
+            <li class="reveal" style="--c: var(--grad)">
+              <span class="year">&lt; 2020</span>
+              <h3>Original implementation — MindsEye (Java)</h3>
+              <p>
+                QQN first appeared as an orienting strategy in MindsEye, a Java deep-learning
+                framework. It was used to train style-transfer and texture-synthesis models whose
+                outputs are collected in the DeepArtist gallery — the “deterministic objective,
+                non-decreasing search” philosophy dates from here.
+              </p>
+              <div class="links">
+                <a
+                  class="btn small"
+                  href="https://github.com/SimiaCryptus/MindsEye/blob/master/src/main/java/com/simiacryptus/mindseye/opt/orient/QQN.java"
+                  target="_blank"
+                  rel="noopener"
+                  >☕ QQN.java (actual implementation)</a
+                >
+                <a
+                  class="btn small"
+                  href="https://github.com/SimiaCryptus/MindseyeAll"
+                  target="_blank"
+                  rel="noopener"
+                  >📦 MindsEye project</a
+                >
+                <a
+                  class="btn small"
+                  href="https://gallery.deepartist.org/"
+                  target="_blank"
+                  rel="noopener"
+                  >🖼️ Image gallery</a
+                >
+              </div>
+            </li>
+            <li class="reveal" style="--c: var(--path)">
+              <span class="year">2025</span>
+              <h3>Formal paper and Rust implementation</h3>
+              <p>
+                The algorithm was written up formally — the quadratic path, its descent guarantee,
+                and a benchmark suite — alongside a from-scratch Rust implementation,
+                <code>qqn-optimizer</code>, used to produce the paper’s results.
+              </p>
+              <div class="links">
+                <a class="btn small" href="paper.pdf" target="_blank" rel="noopener"
+                  >📄 Paper (PDF)</a
+                >
+                <a
+                  class="btn small"
+                  href="http://dx.doi.org/10.13140/RG.2.2.15200.19206"
+                  target="_blank"
+                  rel="noopener"
+                  >🔗 DOI</a
+                >
+                <a
+                  class="btn small"
+                  href="https://github.com/SimiaCryptus/qqn-optimizer"
+                  target="_blank"
+                  rel="noopener"
+                  >🦀 qqn-optimizer</a
+                >
+              </div>
+            </li>
+            <li class="reveal" style="--c: var(--oracle)">
+              <span class="year">2026</span>
+              <h3>Python variants and MNIST benchmarking</h3>
+              <p>
+                Pure-functional ports for the major Python frameworks, generalising the design into
+                the four strategy slots (oracles, regions, spline search) and benchmarking the whole
+                configuration space on MNIST.
+              </p>
+              <div class="frameworks" id="frameworks"></div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ============================ PAPER ============================ -->
+      <section id="paper" class="paper">
+        <div class="wrap">
+          <div class="card reveal">
+            <div>
+              <p class="eyebrow">Read more</p>
+              <h2 style="font-size: 1.6rem">The academic paper</h2>
+              <p class="muted">
+                <em
+                  >Quadratic-Quasi-Newton Optimization: Combining Gradient and Quasi-Newton
+                  Directions Through Quadratic Interpolation.</em
+                >
+                Full derivation, convergence analysis and benchmarks.
+              </p>
+              <div class="cta" style="margin: 0">
+                <a class="btn primary" href="paper.pdf" target="_blank" rel="noopener"
+                  >📄 Open the PDF</a
+                >
+                <a class="btn" href="paper.pdf" download>⬇️ Download</a>
+                <a
+                  class="btn"
+                  href="http://dx.doi.org/10.13140/RG.2.2.15200.19206"
+                  target="_blank"
+                  rel="noopener"
+                  >🔗 DOI</a
+                >
+                <a class="btn" href="paper.html">🖥️ Embedded viewer</a>
+              </div>
+            </div>
+            <pre><code>QQN(
     fun,
     oracle="lbfgs",          # t = 1 endpoint
     line_search="armijo",    # walks t ∈ [0, 1]
@@ -856,131 +1681,262 @@
     region=None,             # feasibility projection
     history_size=10, tol=1e-5, maxiter=100,
 )</code></pre>
-            </div>
           </div>
-        </section>
-      </main>
-
-      <footer>
-        <div class="wrap">
-          <span>&copy; 2024–2026 QQN Optimizer Project · <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a></span>
-          <span><a href="../../index.html">🏠 Home</a> · <a href="README.md">README</a> · <a href="#top">Back to top ↑</a></span>
         </div>
-      </footer>
+      </section>
+    </main>
 
-      <script>
-        (() => {
-          'use strict';
+    <footer>
+      <div class="wrap">
+        <span
+          >&copy; 2024–2026 QQN Optimizer Project ·
+          <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener"
+            >MIT License</a
+          ></span
+        >
+        <span
+          ><a href="../../index.html">🏠 Home</a> · <a href="README.md">README</a> ·
+          <a href="#top">Back to top ↑</a></span
+        >
+      </div>
+    </footer>
 
-          /* ============================================================
-           * Utilities
-           * ============================================================ */
-          const $ = (id) => document.getElementById(id);
-          const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-          const fmt = (v, d = 3) => (Math.abs(v) < 5e-13 ? 0 : v).toFixed(d);
-          const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+    <script>
+      (() => {
+        'use strict';
 
-          /* ============================================================
-           * Reveal-on-scroll
-           * ============================================================ */
-          const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          const revealEls = document.querySelectorAll('.reveal');
-          if (reduceMotion || !('IntersectionObserver' in window)) {
-            revealEls.forEach((el) => el.classList.add('in'));
-          } else {
-            const io = new IntersectionObserver(
-              (entries) => {
-                entries.forEach((e) => {
-                  if (e.isIntersecting) {
-                    e.target.classList.add('in');
-                    io.unobserve(e.target);
-                  }
-                });
+        /* ============================================================
+         * Utilities
+         * ============================================================ */
+        const $ = (id) => document.getElementById(id);
+        const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+        const fmt = (v, d = 3) => (Math.abs(v) < 5e-13 ? 0 : v).toFixed(d);
+        const MONO = 'ui-monospace, Menlo, Consolas, monospace';
+
+        /* ============================================================
+         * Reveal-on-scroll
+         * ============================================================ */
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const revealEls = document.querySelectorAll('.reveal');
+        if (reduceMotion || !('IntersectionObserver' in window)) {
+          revealEls.forEach((el) => el.classList.add('in'));
+        } else {
+          const io = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((e) => {
+                if (e.isIntersecting) {
+                  e.target.classList.add('in');
+                  io.unobserve(e.target);
+                }
+              });
+            },
+            { threshold: 0.1 }
+          );
+          revealEls.forEach((el) => io.observe(el));
+        }
+
+        /* ============================================================
+         * Strategy data
+         * ============================================================ */
+        const STRATEGIES = {
+          gradient: {
+            title: 'Gradient',
+            icon: '∇',
+            color: 'var(--grad)',
+            role: 'path tangent · t → 0',
+            desc: 'The raw steepest-descent signal −∇f(x). Only its direction is used: the leg is rescaled to the oracle step’s length, g̃ = ‖q‖·(−∇f)/‖∇f‖, so ‖∇f‖ cancels and the path is invariant to the gradient’s magnitude. It fixes the tangent of the path (d′(0) = g̃ ∝ −∇f), which is what guarantees that a descent direction always exists for small t — and therefore that QQN converges no matter what the oracle proposes.',
+            iface:
+              'g_tilde = -grad * (norm(q) / norm(grad))   # direction of −∇f, length of the oracle step',
+            providers: [
+              {
+                name: 'Autodiff gradient',
+                tag: 'default',
+                kind: 'default',
+                desc: 'jax.grad / torch.autograd / tf.GradientTape. Exact reverse-mode gradient of the objective; its negation is the path tangent.',
+                code: 'jax.value_and_grad(fun, has_aux=...)',
               },
-              { threshold: 0.1 }
-            );
-            revealEls.forEach((el) => io.observe(el));
-          }
+              {
+                name: 'Full-batch gradient',
+                desc: 'Evaluate the loss over the entire dataset so f is a deterministic function of x — the setting used in the MNIST benchmarks.',
+              },
+              {
+                name: 'Fixed-minibatch gradient',
+                desc: 'Sample a batch once per outer iteration and hold it fixed while the search walks the path, keeping f deterministic within the iteration.',
+              },
+              {
+                name: 'Pseudo-gradient',
+                tag: 'with Orthant',
+                kind: 'custom',
+                desc: '∇f + λ·sign(x) for L1-regularised objectives (OWL-QN convention). Chooses the orthant for coordinates that are currently zero.',
+                code: 'OrthantRegion(l1=λ)',
+              },
+            ],
+          },
+          oracle: {
+            title: 'Oracle',
+            icon: 'H',
+            color: 'var(--oracle)',
+            role: 'path endpoint · t = 1',
+            desc: 'Any black box that, given the gradient and some state, proposes a direction — usually curvature-aware, −H∇f. Because the gradient anchors the path at t = 0, the oracle does not need to guarantee descent: it is free to be aggressive. That makes it the natural extension point.',
+            iface:
+              'Oracle(init: x → state,  direction: (x, ∇f, state) → (−H∇f, state),  update: (state, info) → state)',
+            providers: [
+              {
+                name: 'L-BFGS',
+                tag: 'default',
+                kind: 'default',
+                desc: 'Two-loop recursion over the m most recent curvature pairs (s, y), initial scale H₀ = γI. Pairs are admitted only if ⟨y, s⟩ > ε. Expressed with lax.scan.',
+                code: 'oracle="lbfgs"  ·  LBFGSOracle(history_size=10)',
+              },
+              {
+                name: 'Momentum / heavy-ball',
+                desc: 'Exponentially-weighted gradient history: direction = −(β·v + (1−β)·∇f). No curvature, but gives QQN a heavy-ball flavour at t = 1 while keeping −∇f at t = 0.',
+                code: 'MomentumOracle(beta=0.9)',
+              },
+              {
+                name: 'Secant (Barzilai–Borwein)',
+                desc: 'Scalar inverse-curvature step α = ⟨s, s⟩/⟨s, y⟩ from the previous realised secant; direction −α·∇f. Zero matrix storage; a great Fallback partner for L-BFGS.',
+                code: 'SecantOracle(alpha0=1.0, alpha_max=1e3)',
+              },
+              {
+                name: 'Anderson mixing',
+                desc: 'Solves a small constrained least-squares problem over a window of recent residuals — the variational ideal L-BFGS approximates. Lowest final loss of any configuration on the MNIST benchmark.',
+                code: 'AndersonOracle(window=10, beta=1.0, reg=1e-8)',
+              },
+              {
+                name: 'Shampoo',
+                desc: 'Kronecker-factored second-moment statistics with inverse-root preconditioning, L^{-1/4} G R^{-1/4}, refreshed on a static cadence.',
+                code: 'ShampooOracle(block_size=128, update_freq=20)',
+              },
+              {
+                name: 'Newton',
+                tag: 'unimplemented',
+                kind: 'off',
+                desc: 'Exact −∇²f⁻¹∇f. Listed for completeness: with t = 1 accepted near a well-conditioned minimum QQN becomes Newton’s method, globalised by the gradient tangent.',
+              },
+              {
+                name: 'Nonlinear CG',
+                tag: 'custom',
+                kind: 'custom',
+                desc: 'A custom Oracle returning −∇f + β·p_prev with p_prev in oracle state. Paired with the bisection search this reproduces nonlinear conjugate gradient.',
+              },
+              {
+                name: 'Fallback([O₁, O₂, …])',
+                tag: 'combinator',
+                kind: 'stretch',
+                desc: 'Use the first oracle whose direction is valid (e.g. L-BFGS with a healthy history), else the next — via jnp.where, no Python branching.',
+                code: 'Fallback([LBFGSOracle(50), AndersonOracle()])',
+              },
+              {
+                name: 'Blend([(w, O), …])',
+                tag: 'stretch',
+                kind: 'stretch',
+                desc: 'Fixed convex combination of several oracle directions, e.g. mixing momentum into L-BFGS.',
+              },
+            ],
+          },
+          search: {
+            title: 'Search',
+            icon: 't',
+            color: 'var(--search)',
+            role: 'selects t ∈ [0, 1]',
+            desc: 'The line search is not an implementation detail — it is the glue. It walks the parameter t directly, treating each probe x + d(t) as a state (not a direction to be re-scaled), enforces sufficient decrease, and thereby discovers the right gradient/oracle blend automatically. The quality of QQN is bounded by the quality of its search.',
+            iface:
+              'line_search(f, x, d) → LineSearchResult(t, x_new, f_new, ∇f_new, …)   # region-aware',
+            providers: [
+              {
+                name: 'Backtracking / Armijo',
+                tag: 'default',
+                kind: 'default',
+                desc: 'Start at init_step, shrink α ← shrink·α until f(x + d) ≤ f(x) + c₁⟨∇f, d⟩. lax.while_loop; robust default.',
+                code: 'line_search="armijo"  /  "backtracking"',
+              },
+              {
+                name: 'Strong Wolfe',
+                desc: 'Optax zoom line search: Armijo plus the strong curvature condition, keeping L-BFGS updates well-conditioned. Over-restricts the path step on the MNIST benchmark, so not the default.',
+                code: 'line_search="strong_wolfe"',
+              },
+              {
+                name: 'Hager–Zhang',
+                desc: 'Approximate-Wolfe scheme built on Optax’s backtracking transform; robust when exact curvature conditions are too strict.',
+                code: 'line_search="hager_zhang"',
+              },
+              {
+                name: 'Bisection',
+                desc: 'Exact along-path minimisation: drives the directional derivative ⟨∇f(x + d(t)), d′(t)⟩ to zero. The natural partner for CG-style oracles and exact steepest descent.',
+                code: 'line_search="bisection"',
+              },
+              {
+                name: 'Fixed step',
+                desc: 'Constant t; no conditions. A debugging and benchmarking baseline (and the way to force pure gradient descent or heavy-ball behaviour).',
+                code: 'line_search="fixed", line_search_options={"step": η}',
+              },
+              {
+                name: 'Spline refinement',
+                tag: 'wrapper',
+                kind: 'wrap',
+                desc: 'Orthogonal to the choice above: every probe carries a value and a slope, so a piecewise cubic Hermite spline is fitted and its stationary points probed. Tangents opposing a segment’s secant are reflected (upstream/downstream symmetry rule).',
+                code: 'spline=True   # spline_wrap(inner_search)',
+              },
+            ],
+          },
+          region: {
+            title: 'Region',
+            icon: 'R',
+            color: 'var(--region)',
+            role: 'projects each probe',
+            desc: 'A pure projection project_R(x, x + d(t)) applied inside the line search so that the search navigates the feasible path d_R(t) = project_R(x, x + d(t)) − x. Descent and Wolfe guarantees stay meaningful on the projected path. With no region, the identity projection costs nothing.',
+            iface:
+              'Region(init: x → state,  project: (x, candidate, state) → candidate,  update: (state, info) → state)',
+            providers: [
+              {
+                name: 'None / identity',
+                tag: 'default',
+                kind: 'default',
+                desc: 'No projection, no state. Byte-for-byte equivalent to the un-regioned optimizer.',
+                code: 'region=None',
+              },
+              {
+                name: 'BoxRegion',
+                desc: 'Elementwise clip(candidate, lo, hi). With a gradient-dominated search this is projected gradient descent; with L-BFGS, projected quasi-Newton.',
+                code: 'BoxRegion(lo=0.0, hi=1.0)',
+              },
+              {
+                name: 'OrthantRegion',
+                desc: 'OWL-QN style: zero any coordinate whose sign would flip, choosing the orthant for zero coordinates via the pseudo-gradient. Encourages sparsity.',
+                code: 'OrthantRegion(l1=λ)',
+              },
+              {
+                name: 'TrustRegion',
+                desc: 'Radially clip the step to ‖x_new − x‖ ≤ Δ. Adaptive radius via ρ = ared/pred (shrink if ρ < 0.25, grow at the boundary if ρ > 0.75). Prefer a fixed radius for now — the chord/arc mismatch on the curved path makes ρ an underestimate.',
+                code: 'TrustRegion(radius=1.0, radius_max=1e3, adaptive=False)',
+              },
+              {
+                name: 'Sequential([R₁, R₂, …])',
+                tag: 'combinator',
+                kind: 'stretch',
+                desc: 'Apply projections in order; state is a tuple of child states and update fans out. Stack independent constraints such as box ∩ trust-region.',
+                code: 'Sequential([BoxRegion(0, 1), TrustRegion(0.5)])',
+              },
+              {
+                name: 'Intersection([…])',
+                tag: 'stretch',
+                kind: 'stretch',
+                desc: 'Dykstra-style alternating projection with a fixed, static number of passes to approximate projection onto an intersection.',
+              },
+              {
+                name: 'NoDecreaseRegion',
+                tag: 'experimental',
+                kind: 'exp',
+                desc: 'Multi-objective guard: remove only the component of the step that would increase a secondary objective g, projecting onto the half-space ⟨∇g, s⟩ ≤ 0. Costs one extra gradient per projection.',
+              },
+            ],
+          },
+        };
 
-          /* ============================================================
-           * Strategy data
-           * ============================================================ */
-          const STRATEGIES = {
-            gradient: {
-              title: 'Gradient',
-              icon: '∇',
-              color: 'var(--grad)',
-              role: 'path tangent · t → 0',
-              desc:
-               'The raw steepest-descent signal −∇f(x). Only its direction is used: the leg is rescaled to the oracle step’s length, g̃ = ‖q‖·(−∇f)/‖∇f‖, so ‖∇f‖ cancels and the path is invariant to the gradient’s magnitude. It fixes the tangent of the path (d′(0) = g̃ ∝ −∇f), which is what guarantees that a descent direction always exists for small t — and therefore that QQN converges no matter what the oracle proposes.',
-             iface: 'g_tilde = -grad * (norm(q) / norm(grad))   # direction of −∇f, length of the oracle step',
-              providers: [
-                { name: 'Autodiff gradient', tag: 'default', kind: 'default', desc: 'jax.grad / torch.autograd / tf.GradientTape. Exact reverse-mode gradient of the objective; its negation is the path tangent.', code: 'jax.value_and_grad(fun, has_aux=...)' },
-                { name: 'Full-batch gradient', desc: 'Evaluate the loss over the entire dataset so f is a deterministic function of x — the setting used in the MNIST benchmarks.' },
-                { name: 'Fixed-minibatch gradient', desc: 'Sample a batch once per outer iteration and hold it fixed while the search walks the path, keeping f deterministic within the iteration.' },
-                { name: 'Pseudo-gradient', tag: 'with Orthant', kind: 'custom', desc: '∇f + λ·sign(x) for L1-regularised objectives (OWL-QN convention). Chooses the orthant for coordinates that are currently zero.', code: 'OrthantRegion(l1=λ)' },
-              ],
-            },
-            oracle: {
-              title: 'Oracle',
-              icon: 'H',
-              color: 'var(--oracle)',
-              role: 'path endpoint · t = 1',
-              desc:
-                'Any black box that, given the gradient and some state, proposes a direction — usually curvature-aware, −H∇f. Because the gradient anchors the path at t = 0, the oracle does not need to guarantee descent: it is free to be aggressive. That makes it the natural extension point.',
-              iface: 'Oracle(init: x → state,  direction: (x, ∇f, state) → (−H∇f, state),  update: (state, info) → state)',
-              providers: [
-                { name: 'L-BFGS', tag: 'default', kind: 'default', desc: 'Two-loop recursion over the m most recent curvature pairs (s, y), initial scale H₀ = γI. Pairs are admitted only if ⟨y, s⟩ > ε. Expressed with lax.scan.', code: 'oracle="lbfgs"  ·  LBFGSOracle(history_size=10)' },
-                { name: 'Momentum / heavy-ball', desc: 'Exponentially-weighted gradient history: direction = −(β·v + (1−β)·∇f). No curvature, but gives QQN a heavy-ball flavour at t = 1 while keeping −∇f at t = 0.', code: 'MomentumOracle(beta=0.9)' },
-                { name: 'Secant (Barzilai–Borwein)', desc: 'Scalar inverse-curvature step α = ⟨s, s⟩/⟨s, y⟩ from the previous realised secant; direction −α·∇f. Zero matrix storage; a great Fallback partner for L-BFGS.', code: 'SecantOracle(alpha0=1.0, alpha_max=1e3)' },
-                { name: 'Anderson mixing', desc: 'Solves a small constrained least-squares problem over a window of recent residuals — the variational ideal L-BFGS approximates. Lowest final loss of any configuration on the MNIST benchmark.', code: 'AndersonOracle(window=10, beta=1.0, reg=1e-8)' },
-                { name: 'Shampoo', desc: 'Kronecker-factored second-moment statistics with inverse-root preconditioning, L^{-1/4} G R^{-1/4}, refreshed on a static cadence.', code: 'ShampooOracle(block_size=128, update_freq=20)' },
-                { name: 'Newton', tag: 'unimplemented', kind: 'off', desc: 'Exact −∇²f⁻¹∇f. Listed for completeness: with t = 1 accepted near a well-conditioned minimum QQN becomes Newton’s method, globalised by the gradient tangent.' },
-                { name: 'Nonlinear CG', tag: 'custom', kind: 'custom', desc: 'A custom Oracle returning −∇f + β·p_prev with p_prev in oracle state. Paired with the bisection search this reproduces nonlinear conjugate gradient.' },
-                { name: 'Fallback([O₁, O₂, …])', tag: 'combinator', kind: 'stretch', desc: 'Use the first oracle whose direction is valid (e.g. L-BFGS with a healthy history), else the next — via jnp.where, no Python branching.', code: 'Fallback([LBFGSOracle(50), AndersonOracle()])' },
-                { name: 'Blend([(w, O), …])', tag: 'stretch', kind: 'stretch', desc: 'Fixed convex combination of several oracle directions, e.g. mixing momentum into L-BFGS.' },
-              ],
-            },
-            search: {
-              title: 'Search',
-              icon: 't',
-              color: 'var(--search)',
-              role: 'selects t ∈ [0, 1]',
-              desc:
-                'The line search is not an implementation detail — it is the glue. It walks the parameter t directly, treating each probe x + d(t) as a state (not a direction to be re-scaled), enforces sufficient decrease, and thereby discovers the right gradient/oracle blend automatically. The quality of QQN is bounded by the quality of its search.',
-              iface: 'line_search(f, x, d) → LineSearchResult(t, x_new, f_new, ∇f_new, …)   # region-aware',
-              providers: [
-                { name: 'Backtracking / Armijo', tag: 'default', kind: 'default', desc: 'Start at init_step, shrink α ← shrink·α until f(x + d) ≤ f(x) + c₁⟨∇f, d⟩. lax.while_loop; robust default.', code: 'line_search="armijo"  /  "backtracking"' },
-                { name: 'Strong Wolfe', desc: 'Optax zoom line search: Armijo plus the strong curvature condition, keeping L-BFGS updates well-conditioned. Over-restricts the path step on the MNIST benchmark, so not the default.', code: 'line_search="strong_wolfe"' },
-                { name: 'Hager–Zhang', desc: 'Approximate-Wolfe scheme built on Optax’s backtracking transform; robust when exact curvature conditions are too strict.', code: 'line_search="hager_zhang"' },
-                { name: 'Bisection', desc: 'Exact along-path minimisation: drives the directional derivative ⟨∇f(x + d(t)), d′(t)⟩ to zero. The natural partner for CG-style oracles and exact steepest descent.', code: 'line_search="bisection"' },
-                { name: 'Fixed step', desc: 'Constant t; no conditions. A debugging and benchmarking baseline (and the way to force pure gradient descent or heavy-ball behaviour).', code: 'line_search="fixed", line_search_options={"step": η}' },
-                { name: 'Spline refinement', tag: 'wrapper', kind: 'wrap', desc: 'Orthogonal to the choice above: every probe carries a value and a slope, so a piecewise cubic Hermite spline is fitted and its stationary points probed. Tangents opposing a segment’s secant are reflected (upstream/downstream symmetry rule).', code: 'spline=True   # spline_wrap(inner_search)' },
-              ],
-            },
-            region: {
-              title: 'Region',
-              icon: 'R',
-              color: 'var(--region)',
-              role: 'projects each probe',
-              desc:
-                'A pure projection project_R(x, x + d(t)) applied inside the line search so that the search navigates the feasible path d_R(t) = project_R(x, x + d(t)) − x. Descent and Wolfe guarantees stay meaningful on the projected path. With no region, the identity projection costs nothing.',
-              iface: 'Region(init: x → state,  project: (x, candidate, state) → candidate,  update: (state, info) → state)',
-              providers: [
-                { name: 'None / identity', tag: 'default', kind: 'default', desc: 'No projection, no state. Byte-for-byte equivalent to the un-regioned optimizer.', code: 'region=None' },
-                { name: 'BoxRegion', desc: 'Elementwise clip(candidate, lo, hi). With a gradient-dominated search this is projected gradient descent; with L-BFGS, projected quasi-Newton.', code: 'BoxRegion(lo=0.0, hi=1.0)' },
-                { name: 'OrthantRegion', desc: 'OWL-QN style: zero any coordinate whose sign would flip, choosing the orthant for zero coordinates via the pseudo-gradient. Encourages sparsity.', code: 'OrthantRegion(l1=λ)' },
-                { name: 'TrustRegion', desc: 'Radially clip the step to ‖x_new − x‖ ≤ Δ. Adaptive radius via ρ = ared/pred (shrink if ρ < 0.25, grow at the boundary if ρ > 0.75). Prefer a fixed radius for now — the chord/arc mismatch on the curved path makes ρ an underestimate.', code: 'TrustRegion(radius=1.0, radius_max=1e3, adaptive=False)' },
-                { name: 'Sequential([R₁, R₂, …])', tag: 'combinator', kind: 'stretch', desc: 'Apply projections in order; state is a tuple of child states and update fans out. Stack independent constraints such as box ∩ trust-region.', code: 'Sequential([BoxRegion(0, 1), TrustRegion(0.5)])' },
-                { name: 'Intersection([…])', tag: 'stretch', kind: 'stretch', desc: 'Dykstra-style alternating projection with a fixed, static number of passes to approximate projection onto an intersection.' },
-                { name: 'NoDecreaseRegion', tag: 'experimental', kind: 'exp', desc: 'Multi-objective guard: remove only the component of the step that would increase a secondary objective g, projecting onto the half-space ⟨∇g, s⟩ ≤ 0. Costs one extra gradient per projection.' },
-              ],
-            },
-          };
-
-          const tabsEl = $('strategyTabs');
-          const panelEl = $('strategyPanel');
-          const providerCard = (p) => `
+        const tabsEl = $('strategyTabs');
+        const panelEl = $('strategyPanel');
+        const providerCard = (p) => `
             <article class="provider">
               <header>
                 <h4>${p.name}</h4>
@@ -990,15 +1946,15 @@
               ${p.code ? `<code class="cfg">${p.code}</code>` : ''}
             </article>`;
 
-          function showStrategy(key) {
-            const s = STRATEGIES[key];
-            tabsEl.querySelectorAll('.tab').forEach((b) => {
-              const on = b.dataset.key === key;
-              b.classList.toggle('on', on);
-              b.setAttribute('aria-selected', String(on));
-            });
-            panelEl.style.setProperty('--c', s.color);
-            panelEl.innerHTML = `
+        function showStrategy(key) {
+          const s = STRATEGIES[key];
+          tabsEl.querySelectorAll('.tab').forEach((b) => {
+            const on = b.dataset.key === key;
+            b.classList.toggle('on', on);
+            b.setAttribute('aria-selected', String(on));
+          });
+          panelEl.style.setProperty('--c', s.color);
+          panelEl.innerHTML = `
               <div class="strategy-head">
                 <div class="strategy-icon math">${s.icon}</div>
                 <div>
@@ -1009,123 +1965,178 @@
                 </div>
               </div>
               <div class="providers">${s.providers.map(providerCard).join('')}</div>`;
-          }
+        }
 
-          Object.keys(STRATEGIES).forEach((key) => {
-            const s = STRATEGIES[key];
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'tab';
-            b.dataset.key = key;
-            b.setAttribute('role', 'tab');
-            b.style.setProperty('--c', s.color);
-            b.innerHTML = `<i></i>${s.title}<span class="muted small">· ${s.providers.length}</span>`;
-            b.addEventListener('click', () => showStrategy(key));
-            tabsEl.appendChild(b);
-          });
-          showStrategy('oracle');
+        Object.keys(STRATEGIES).forEach((key) => {
+          const s = STRATEGIES[key];
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'tab';
+          b.dataset.key = key;
+          b.setAttribute('role', 'tab');
+          b.style.setProperty('--c', s.color);
+          b.innerHTML = `<i></i>${s.title}<span class="muted small">· ${s.providers.length}</span>`;
+          b.addEventListener('click', () => showStrategy(key));
+          tabsEl.appendChild(b);
+        });
+        showStrategy('oracle');
 
-          /* ============================================================
-           * Configuration builder → code + classical equivalence
-           * ============================================================ */
-          const ORACLE_EXPR = {
-            lbfgs: 'oracle="lbfgs", history_size=10',
-            momentum: 'oracle="momentum"',
-            secant: 'oracle="secant"',
-            anderson: 'oracle="anderson"',
-            shampoo: 'oracle="shampoo"',
-            gradient: 'oracle=gradient_oracle,  # custom Oracle: direction = -∇f',
-          };
-          const ORACLE_NAME = { lbfgs: 'L-BFGS', momentum: 'momentum', secant: 'Barzilai–Borwein', anderson: 'Anderson', shampoo: 'Shampoo', gradient: 'gradient' };
-          const REGION_EXPR = {
-            none: { expr: 'None', imp: null },
-            box: { expr: 'BoxRegion(lo=0.0, hi=1.0)', imp: 'BoxRegion' },
-            orthant: { expr: 'OrthantRegion(l1=1e-3)', imp: 'OrthantRegion' },
-            trust: { expr: 'TrustRegion(radius=1.0, adaptive=False)', imp: 'TrustRegion' },
-          };
+        /* ============================================================
+         * Configuration builder → code + classical equivalence
+         * ============================================================ */
+        const ORACLE_EXPR = {
+          lbfgs: 'oracle="lbfgs", history_size=10',
+          momentum: 'oracle="momentum"',
+          secant: 'oracle="secant"',
+          anderson: 'oracle="anderson"',
+          shampoo: 'oracle="shampoo"',
+          gradient: 'oracle=gradient_oracle,  # custom Oracle: direction = -∇f',
+        };
+        const ORACLE_NAME = {
+          lbfgs: 'L-BFGS',
+          momentum: 'momentum',
+          secant: 'Barzilai–Borwein',
+          anderson: 'Anderson',
+          shampoo: 'Shampoo',
+          gradient: 'gradient',
+        };
+        const REGION_EXPR = {
+          none: { expr: 'None', imp: null },
+          box: { expr: 'BoxRegion(lo=0.0, hi=1.0)', imp: 'BoxRegion' },
+          orthant: { expr: 'OrthantRegion(l1=1e-3)', imp: 'OrthantRegion' },
+          trust: { expr: 'TrustRegion(radius=1.0, adaptive=False)', imp: 'TrustRegion' },
+        };
 
-          function equivalence(o, s, r, spline) {
-            const exact = s === 'bisection' || s === 'strong_wolfe';
-            const tail = spline ? ' The spline refinement reuses every probe as a Hermite control point on top.' : '';
-            let name, note;
-            if (r === 'orthant' && o === 'lbfgs') {
-              name = 'OWL-QN';
-              note = 'L-BFGS curvature memory supplies d(1); the orthant projection keeps each step in the current sign pattern; the sufficient-decrease test tolerates the projection’s discontinuities.';
-            } else if (r === 'trust' && o === 'lbfgs') {
-              name = 'Quasi-Newton trust region';
-              note = 'The along-path quadratic model plays the trust-region model, the radial clip is the constraint, and (when adaptive) ρ = ared/pred grows and shrinks the radius.';
-            } else if (r === 'box') {
-              name = o === 'gradient' ? 'Projected gradient descent' : `Projected ${ORACLE_NAME[o]} (projected quasi-Newton)`;
-              note = 'Every candidate x + d(t) is clipped into [lo, hi] before evaluation; the line search walks the projected path.';
-            } else if (r === 'orthant') {
-              name = `Orthant-constrained ${ORACLE_NAME[o]}`;
-              note = 'Sign-preserving projection with a non-L-BFGS oracle — an OWL-QN-flavoured variant.';
-            } else if (r === 'trust') {
-              name = `Trust-region ${ORACLE_NAME[o]}`;
-              note = 'The oracle’s step is radially clipped to ‖x_new − x‖ ≤ Δ inside the search.';
-            } else if (o === 'gradient') {
-              if (s === 'fixed') { name = 'Gradient descent (fixed learning rate)'; note = 'With d(1) = −∇f the path degenerates to scaled steepest descent and a fixed t is just x ← x − η∇f.'; }
-              else if (exact) { name = 'Steepest descent with exact line search'; note = 'The degenerate β = 0 case of conjugate gradient. Add conjugacy in the oracle (−∇f + β·p_prev) for full nonlinear CG.'; }
-              else { name = 'Steepest descent (Armijo)'; note = 'Classical backtracking gradient descent.'; }
-            } else if (o === 'momentum') {
-              name = s === 'fixed' ? 'Heavy-ball momentum' : 'Line-searched momentum';
-              note = 'd(1) = −(β·v + (1−β)·∇f); the raw gradient remains available at t → 0 for globalisation.';
-            } else if (o === 'secant') {
-              name = 'Barzilai–Borwein';
-              note = 'A scalar BB1 step α = ⟨s, s⟩/⟨s, y⟩ inferred from the last realised secant, globalised by the gradient anchor.';
-            } else if (o === 'anderson') {
-              name = 'Anderson / Pulay acceleration';
-              note = 'Least-squares extrapolation over recent residuals; an ill-conditioned solve costs at most a short line search, never divergence.';
-            } else if (o === 'shampoo') {
-              name = 'Shampoo (preconditioned gradient)';
-              note = 'Kronecker-factored inverse-root preconditioning at t = 1, gradient-anchored at t = 0.';
+        function equivalence(o, s, r, spline) {
+          const exact = s === 'bisection' || s === 'strong_wolfe';
+          const tail = spline
+            ? ' The spline refinement reuses every probe as a Hermite control point on top.'
+            : '';
+          let name, note;
+          if (r === 'orthant' && o === 'lbfgs') {
+            name = 'OWL-QN';
+            note =
+              'L-BFGS curvature memory supplies d(1); the orthant projection keeps each step in the current sign pattern; the sufficient-decrease test tolerates the projection’s discontinuities.';
+          } else if (r === 'trust' && o === 'lbfgs') {
+            name = 'Quasi-Newton trust region';
+            note =
+              'The along-path quadratic model plays the trust-region model, the radial clip is the constraint, and (when adaptive) ρ = ared/pred grows and shrinks the radius.';
+          } else if (r === 'box') {
+            name =
+              o === 'gradient'
+                ? 'Projected gradient descent'
+                : `Projected ${ORACLE_NAME[o]} (projected quasi-Newton)`;
+            note =
+              'Every candidate x + d(t) is clipped into [lo, hi] before evaluation; the line search walks the projected path.';
+          } else if (r === 'orthant') {
+            name = `Orthant-constrained ${ORACLE_NAME[o]}`;
+            note =
+              'Sign-preserving projection with a non-L-BFGS oracle — an OWL-QN-flavoured variant.';
+          } else if (r === 'trust') {
+            name = `Trust-region ${ORACLE_NAME[o]}`;
+            note = 'The oracle’s step is radially clipped to ‖x_new − x‖ ≤ Δ inside the search.';
+          } else if (o === 'gradient') {
+            if (s === 'fixed') {
+              name = 'Gradient descent (fixed learning rate)';
+              note =
+                'With d(1) = −∇f the path degenerates to scaled steepest descent and a fixed t is just x ← x − η∇f.';
             } else if (exact) {
-              name = 'L-BFGS (Wolfe / exact line search)';
-              note = 'When the search reaches t = 1 the step is exactly the two-loop L-BFGS direction; the curved path makes the trajectory slightly less optimised per step but more robust.';
+              name = 'Steepest descent with exact line search';
+              note =
+                'The degenerate β = 0 case of conjugate gradient. Add conjugacy in the oracle (−∇f + β·p_prev) for full nonlinear CG.';
             } else {
-              name = 'QQN (default) — L-BFGS with a gradient safety net';
-              note = 'The reference configuration: L-BFGS endpoint, Armijo backtracking along the quadratic path, no region.';
+              name = 'Steepest descent (Armijo)';
+              note = 'Classical backtracking gradient descent.';
             }
-            return { name, note: note + tail };
+          } else if (o === 'momentum') {
+            name = s === 'fixed' ? 'Heavy-ball momentum' : 'Line-searched momentum';
+            note =
+              'd(1) = −(β·v + (1−β)·∇f); the raw gradient remains available at t → 0 for globalisation.';
+          } else if (o === 'secant') {
+            name = 'Barzilai–Borwein';
+            note =
+              'A scalar BB1 step α = ⟨s, s⟩/⟨s, y⟩ inferred from the last realised secant, globalised by the gradient anchor.';
+          } else if (o === 'anderson') {
+            name = 'Anderson / Pulay acceleration';
+            note =
+              'Least-squares extrapolation over recent residuals; an ill-conditioned solve costs at most a short line search, never divergence.';
+          } else if (o === 'shampoo') {
+            name = 'Shampoo (preconditioned gradient)';
+            note =
+              'Kronecker-factored inverse-root preconditioning at t = 1, gradient-anchored at t = 0.';
+          } else if (exact) {
+            name = 'L-BFGS (Wolfe / exact line search)';
+            note =
+              'When the search reaches t = 1 the step is exactly the two-loop L-BFGS direction; the curved path makes the trajectory slightly less optimised per step but more robust.';
+          } else {
+            name = 'QQN (default) — L-BFGS with a gradient safety net';
+            note =
+              'The reference configuration: L-BFGS endpoint, Armijo backtracking along the quadratic path, no region.';
           }
+          return { name, note: note + tail };
+        }
 
-          const cfg = { o: $('cfgOracle'), s: $('cfgSearch'), r: $('cfgRegion'), sp: $('cfgSpline') };
-          function renderConfig() {
-            const o = cfg.o.value, s = cfg.s.value, r = cfg.r.value, sp = cfg.sp.checked;
-            const region = REGION_EXPR[r];
-            const imports = ['QQN'];
-            if (region.imp) imports.push(region.imp);
-            const code = [
-              `from qqn_jax import ${imports.join(', ')}`,
-              '',
-              'solver = QQN(',
-              '    fun,',
-              `    ${ORACLE_EXPR[o]},`,
-              `    line_search="${s}",`,
-              `    spline=${sp ? 'True' : 'False'},`,
-              `    region=${region.expr},`,
-              '    maxiter=200, tol=1e-6,',
-              ')',
-              'params, state = solver.run(x0)',
-            ].join('\n');
-            $('cfgCode').textContent = code;
-            const eq = equivalence(o, s, r, sp);
-            $('eqName').textContent = eq.name;
-            $('eqNote').textContent = eq.note;
-          }
-          Object.values(cfg).forEach((el) => el.addEventListener('change', renderConfig));
-          renderConfig();
+        const cfg = { o: $('cfgOracle'), s: $('cfgSearch'), r: $('cfgRegion'), sp: $('cfgSpline') };
+        function renderConfig() {
+          const o = cfg.o.value,
+            s = cfg.s.value,
+            r = cfg.r.value,
+            sp = cfg.sp.checked;
+          const region = REGION_EXPR[r];
+          const imports = ['QQN'];
+          if (region.imp) imports.push(region.imp);
+          const code = [
+            `from qqn_jax import ${imports.join(', ')}`,
+            '',
+            'solver = QQN(',
+            '    fun,',
+            `    ${ORACLE_EXPR[o]},`,
+            `    line_search="${s}",`,
+            `    spline=${sp ? 'True' : 'False'},`,
+            `    region=${region.expr},`,
+            '    maxiter=200, tol=1e-6,',
+            ')',
+            'params, state = solver.run(x0)',
+          ].join('\n');
+          $('cfgCode').textContent = code;
+          const eq = equivalence(o, s, r, sp);
+          $('eqName').textContent = eq.name;
+          $('eqNote').textContent = eq.note;
+        }
+        Object.values(cfg).forEach((el) => el.addEventListener('change', renderConfig));
+        renderConfig();
 
-          /* ============================================================
-           * History: framework cards
-           * ============================================================ */
-          const FRAMEWORKS = [
-            { icon: '🐍', name: 'JAX / Optax', pkg: 'qqn-jax', github: 'https://github.com/SimiaCryptus/qqn-jax', results: 'https://github.com/SimiaCryptus/qqn-jax/blob/main/docs/results.md', pypi: 'https://pypi.org/project/qqn-jax/' },
-            { icon: '🔥', name: 'PyTorch', pkg: 'qqn-torch', github: 'https://github.com/SimiaCryptus/qqn-torch', results: 'https://github.com/SimiaCryptus/qqn-torch/blob/main/docs/results.md', pypi: 'https://pypi.org/project/qqn-torch/' },
-            { icon: '🧮', name: 'TensorFlow', pkg: 'qqn-tensorflow', github: 'https://github.com/SimiaCryptus/qqn-tensorflow', results: 'https://github.com/SimiaCryptus/qqn-tensorflow/blob/main/docs/results.md', pypi: 'https://pypi.org/project/qqn-tensorflow/' },
-          ];
-          $('frameworks').innerHTML = FRAMEWORKS.map(
-            (f) => `
+        /* ============================================================
+         * History: framework cards
+         * ============================================================ */
+        const FRAMEWORKS = [
+          {
+            icon: '🐍',
+            name: 'JAX / Optax',
+            pkg: 'qqn-jax',
+            github: 'https://github.com/SimiaCryptus/qqn-jax',
+            results: 'https://github.com/SimiaCryptus/qqn-jax/blob/main/docs/results.md',
+            pypi: 'https://pypi.org/project/qqn-jax/',
+          },
+          {
+            icon: '🔥',
+            name: 'PyTorch',
+            pkg: 'qqn-torch',
+            github: 'https://github.com/SimiaCryptus/qqn-torch',
+            results: 'https://github.com/SimiaCryptus/qqn-torch/blob/main/docs/results.md',
+            pypi: 'https://pypi.org/project/qqn-torch/',
+          },
+          {
+            icon: '🧮',
+            name: 'TensorFlow',
+            pkg: 'qqn-tensorflow',
+            github: 'https://github.com/SimiaCryptus/qqn-tensorflow',
+            results: 'https://github.com/SimiaCryptus/qqn-tensorflow/blob/main/docs/results.md',
+            pypi: 'https://pypi.org/project/qqn-tensorflow/',
+          },
+        ];
+        $('frameworks').innerHTML = FRAMEWORKS.map(
+          (f) => `
               <div class="card">
                 <h4>${f.icon} ${f.name} <code>${f.pkg}</code></h4>
                 <div class="links">
@@ -1134,433 +2145,651 @@
                   <a class="btn small" href="${f.pypi}" target="_blank" rel="noopener">PyPI</a>
                 </div>
               </div>`
-          ).join('');
+        ).join('');
 
-          /* ============================================================
-           * Interactive path demo
-           * ============================================================ */
-          const cv = $('pathCanvas'), ctx = cv.getContext('2d');
-          const pv = $('phiCanvas'), pctx = pv.getContext('2d');
-          const ui = {
-            t: $('tSlider'), kappa: $('kappaSlider'), region: $('regionToggle'), radius: $('radiusSlider'),
-            radiusWrap: $('radiusWrap'), play: $('playBtn'),
-            out: {
-              t: $('outT'), t2: $('outT2'), kappa: $('outKappa'), radius: $('outRadius'), wg: $('outWg'), wq: $('outWq'),
-              len: $('outLen'), phi: $('outPhi'), armijo: $('outArmijo'), tstar: $('outTstar'), phistar: $('outPhiStar'),
-            },
-          };
-          const C1 = 0.1; // exaggerated for visibility (1e-4 in practice)
-          const PAD = { l: 46, r: 14, t: 14, b: 26 };
-          const COLORS = { g: '#fb923c', q: '#38bdf8', path: '#a78bfa', pt: '#facc15', region: '#34d399' };
+        /* ============================================================
+         * Interactive path demo
+         * ============================================================ */
+        const cv = $('pathCanvas'),
+          ctx = cv.getContext('2d');
+        const pv = $('phiCanvas'),
+          pctx = pv.getContext('2d');
+        const ui = {
+          t: $('tSlider'),
+          kappa: $('kappaSlider'),
+          region: $('regionToggle'),
+          radius: $('radiusSlider'),
+          radiusWrap: $('radiusWrap'),
+          play: $('playBtn'),
+          out: {
+            t: $('outT'),
+            t2: $('outT2'),
+            kappa: $('outKappa'),
+            radius: $('outRadius'),
+            wg: $('outWg'),
+            wq: $('outWq'),
+            len: $('outLen'),
+            phi: $('outPhi'),
+            armijo: $('outArmijo'),
+            tstar: $('outTstar'),
+            phistar: $('outPhiStar'),
+          },
+        };
+        const C1 = 0.1; // exaggerated for visibility (1e-4 in practice)
+        const PAD = { l: 46, r: 14, t: 14, b: 26 };
+        const COLORS = {
+          g: '#fb923c',
+          q: '#38bdf8',
+          path: '#a78bfa',
+          pt: '#facc15',
+          region: '#34d399',
+        };
 
-          // Model: toy quadratic f(x + d) − f(x) = −⟨g, d⟩ + ½ dᵀ A d with A = R diag(1, κ) Rᵀ, g = −∇f(x).
-          const S = { g: { x: -3.1, y: 0.9 }, q: { x: 0, y: 0 }, t: 0.6, kappa: 6, theta: Math.PI / 6, region: false, radius: 2.2 };
-          const view = { w: 0, h: 0, cx: 0, cy: 0, scale: 1 };
-          let drag = null, playing = false, dir = 1, raf = 0;
+        // Model: toy quadratic f(x + d) − f(x) = −⟨g, d⟩ + ½ dᵀ A d with A = R diag(1, κ) Rᵀ, g = −∇f(x).
+        const S = {
+          g: { x: -3.1, y: 0.9 },
+          q: { x: 0, y: 0 },
+          t: 0.6,
+          kappa: 6,
+          theta: Math.PI / 6,
+          region: false,
+          radius: 2.2,
+        };
+        const view = { w: 0, h: 0, cx: 0, cy: 0, scale: 1 };
+        let drag = null,
+          playing = false,
+          dir = 1,
+          raf = 0;
 
-          const dot = (a, b) => a.x * b.x + a.y * b.y;
-          const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
-          const mul = (a, k) => ({ x: a.x * k, y: a.y * k });
-          const norm = (a) => Math.hypot(a.x, a.y);
-          const rot = (v, ang) => ({ x: v.x * Math.cos(ang) - v.y * Math.sin(ang), y: v.x * Math.sin(ang) + v.y * Math.cos(ang) });
+        const dot = (a, b) => a.x * b.x + a.y * b.y;
+        const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
+        const mul = (a, k) => ({ x: a.x * k, y: a.y * k });
+        const norm = (a) => Math.hypot(a.x, a.y);
+        const rot = (v, ang) => ({
+          x: v.x * Math.cos(ang) - v.y * Math.sin(ang),
+          y: v.x * Math.sin(ang) + v.y * Math.cos(ang),
+        });
 
-          function applySym(v, l1, l2) {
-            const c = Math.cos(S.theta), s = Math.sin(S.theta);
-            const u1 = c * v.x + s * v.y, u2 = -s * v.x + c * v.y; // Rᵀ v
-            const w1 = l1 * u1, w2 = l2 * u2;
-            return { x: c * w1 - s * w2, y: s * w1 + c * w2 }; // R w
-          }
-          const A = (v) => applySym(v, 1, S.kappa);
-          const Ainv = (v) => applySym(v, 1, 1 / S.kappa);
-          const f = (d) => -dot(S.g, d) + 0.5 * dot(d, A(d));
-         // The gradient leg is rescaled to the oracle step's length:
-         //     g̃ = ‖q‖ · (−∇f)/‖∇f‖
-         // so ‖∇f‖ cancels out of d(t). This is deliberate and important: scaling the
-         // gradient (or the objective) leaves the path — and therefore the whole 1-D
-         // search space — completely unchanged. Only its direction matters.
-         const gTilde = () => {
-           const ng = norm(S.g);
-           if (ng < 1e-12) return { x: 0, y: 0 };
-           const nq = norm(S.q);
-           return mul(S.g, (nq > 1e-12 ? nq : ng) / ng); // fall back to ‖g‖ if the oracle step vanishes
-         };
-         const rawPath = (t) => add(mul(gTilde(), t * (1 - t)), mul(S.q, t * t));
-          const project = (d) => {
-            if (!S.region) return d;
-            const n = norm(d);
-            return n > S.radius ? mul(d, S.radius / n) : d;
-          };
-          const path = (t) => project(rawPath(t));
-          const phi = (t) => f(path(t));
-          const armijo = (t) => -C1 * dot(S.g, path(t)); // f(x) + c₁⟨∇f, d⟩ with f(x) = 0, ∇f = −g
+        function applySym(v, l1, l2) {
+          const c = Math.cos(S.theta),
+            s = Math.sin(S.theta);
+          const u1 = c * v.x + s * v.y,
+            u2 = -s * v.x + c * v.y; // Rᵀ v
+          const w1 = l1 * u1,
+            w2 = l2 * u2;
+          return { x: c * w1 - s * w2, y: s * w1 + c * w2 }; // R w
+        }
+        const A = (v) => applySym(v, 1, S.kappa);
+        const Ainv = (v) => applySym(v, 1, 1 / S.kappa);
+        const f = (d) => -dot(S.g, d) + 0.5 * dot(d, A(d));
+        // The gradient leg is rescaled to the oracle step's length:
+        //     g̃ = ‖q‖ · (−∇f)/‖∇f‖
+        // so ‖∇f‖ cancels out of d(t). This is deliberate and important: scaling the
+        // gradient (or the objective) leaves the path — and therefore the whole 1-D
+        // search space — completely unchanged. Only its direction matters.
+        const gTilde = () => {
+          const ng = norm(S.g);
+          if (ng < 1e-12) return { x: 0, y: 0 };
+          const nq = norm(S.q);
+          return mul(S.g, (nq > 1e-12 ? nq : ng) / ng); // fall back to ‖g‖ if the oracle step vanishes
+        };
+        const rawPath = (t) => add(mul(gTilde(), t * (1 - t)), mul(S.q, t * t));
+        const project = (d) => {
+          if (!S.region) return d;
+          const n = norm(d);
+          return n > S.radius ? mul(d, S.radius / n) : d;
+        };
+        const path = (t) => project(rawPath(t));
+        const phi = (t) => f(path(t));
+        const armijo = (t) => -C1 * dot(S.g, path(t)); // f(x) + c₁⟨∇f, d⟩ with f(x) = 0, ∇f = −g
 
-          const toS = (p) => ({ x: view.cx + p.x * view.scale, y: view.cy - p.y * view.scale });
-          const toW = (p) => ({ x: (p.x - view.cx) / view.scale, y: (view.cy - p.y) / view.scale });
+        const toS = (p) => ({ x: view.cx + p.x * view.scale, y: view.cy - p.y * view.scale });
+        const toW = (p) => ({ x: (p.x - view.cx) / view.scale, y: (view.cy - p.y) / view.scale });
 
-          function argminT() {
-            let best = 0, bv = Infinity;
-            for (let i = 0; i <= 400; i++) {
-              const t = i / 400, v = phi(t);
-              if (v < bv) { bv = v; best = t; }
+        function argminT() {
+          let best = 0,
+            bv = Infinity;
+          for (let i = 0; i <= 400; i++) {
+            const t = i / 400,
+              v = phi(t);
+            if (v < bv) {
+              bv = v;
+              best = t;
             }
-            return { t: best, v: bv };
+          }
+          return { t: best, v: bv };
+        }
+
+        /* ---- drawing helpers (main canvas) ---- */
+        function text(str, x, y, color, size = 12) {
+          ctx.save();
+          ctx.font = `${size}px ${MONO}`;
+          ctx.textBaseline = 'middle';
+          const wd = ctx.measureText(str).width;
+          ctx.fillStyle = 'rgba(6,10,20,0.78)';
+          ctx.fillRect(x - 3, y - size * 0.75, wd + 6, size * 1.5);
+          ctx.fillStyle = color;
+          ctx.fillText(str, x, y);
+          ctx.restore();
+        }
+        function labelNear(p, str, color) {
+          const s = toS(p);
+          ctx.font = `12px ${MONO}`;
+          const wd = ctx.measureText(str).width;
+          let x = s.x + 14;
+          if (x + wd + 6 > view.w) x = s.x - wd - 14;
+          text(str, clamp(x, 4, view.w - wd - 6), clamp(s.y - 16, 12, view.h - 12), color);
+        }
+        function arrow(from, to, color, width = 2.5, dash = null) {
+          const a = toS(from),
+            b = toS(to);
+          const dx = b.x - a.x,
+            dy = b.y - a.y,
+            len = Math.hypot(dx, dy);
+          if (len < 1) return;
+          const ux = dx / len,
+            uy = dy / len,
+            hl = Math.min(12, len * 0.5);
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.fillStyle = color;
+          ctx.lineWidth = width;
+          ctx.lineCap = 'round';
+          if (dash) ctx.setLineDash(dash);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x - ux * hl * 0.8, b.y - uy * hl * 0.8);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(b.x, b.y);
+          ctx.lineTo(b.x - ux * hl - uy * hl * 0.5, b.y - uy * hl + ux * hl * 0.5);
+          ctx.lineTo(b.x - ux * hl + uy * hl * 0.5, b.y - uy * hl - ux * hl * 0.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+        function strokeCurve(fn, color, width, dash, glow) {
+          ctx.save();
+          ctx.beginPath();
+          for (let i = 0; i <= 160; i++) {
+            const s = toS(fn(i / 160));
+            if (i) ctx.lineTo(s.x, s.y);
+            else ctx.moveTo(s.x, s.y);
+          }
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          if (dash) ctx.setLineDash(dash);
+          if (glow) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 14;
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+        function dotAt(x, y, r, color) {
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+        }
+        function glowDot(x, y, r, color) {
+          ctx.save();
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 16;
+          dotAt(x, y, r, color);
+          ctx.restore();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#0b1020';
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        function handle(p, color) {
+          const s = toS(p);
+          ctx.save();
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 10;
+          dotAt(s.x, s.y, 8, color);
+          ctx.restore();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        function cross(x, y, r, color) {
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x - r, y - r);
+          ctx.lineTo(x + r, y + r);
+          ctx.moveTo(x - r, y + r);
+          ctx.lineTo(x + r, y - r);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawContours() {
+          const center = Ainv(S.g);
+          const fmin = -0.5 * dot(S.g, center);
+          const corners = [
+            toW({ x: 0, y: 0 }),
+            toW({ x: view.w, y: 0 }),
+            toW({ x: 0, y: view.h }),
+            toW({ x: view.w, y: view.h }),
+          ];
+          const fmax = Math.max(...corners.map(f));
+          const N = 16,
+            step = (fmax - fmin) / N;
+          if (!(step > 0)) return;
+          const c = toS(center);
+          for (let k = N; k >= 1; k--) {
+            const r2 = 2 * (fmin + k * step - fmin);
+            const a1 = Math.sqrt(r2) * view.scale,
+              a2 = Math.sqrt(r2 / S.kappa) * view.scale;
+            const u = 1 - k / N;
+            ctx.beginPath();
+            ctx.ellipse(c.x, c.y, a1, a2, -S.theta, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(139,92,246,${0.035 + 0.3 * u * u})`;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+        function drawGrid() {
+          const { w, h } = view;
+          const tl = toW({ x: 0, y: 0 }),
+            br = toW({ x: w, y: h });
+          ctx.save();
+          ctx.lineWidth = 1;
+          for (let gx = Math.ceil(tl.x); gx <= Math.floor(br.x); gx++) {
+            const s = toS({ x: gx, y: 0 });
+            ctx.strokeStyle = gx === 0 ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.06)';
+            ctx.beginPath();
+            ctx.moveTo(s.x, 0);
+            ctx.lineTo(s.x, h);
+            ctx.stroke();
+          }
+          for (let gy = Math.ceil(br.y); gy <= Math.floor(tl.y); gy++) {
+            const s = toS({ x: 0, y: gy });
+            ctx.strokeStyle = gy === 0 ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.06)';
+            ctx.beginPath();
+            ctx.moveTo(0, s.y);
+            ctx.lineTo(w, s.y);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        function draw() {
+          const { w, h } = view;
+          if (!w || !h) return;
+          ctx.clearRect(0, 0, w, h);
+          drawContours();
+          drawGrid();
+
+          const O = { x: 0, y: 0 };
+          if (S.region) {
+            const o = toS(O);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, S.radius * view.scale, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(52,211,153,0.06)';
+            ctx.fill();
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = 'rgba(52,211,153,0.75)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.restore();
+            strokeCurve(rawPath, 'rgba(167,139,250,0.35)', 2, [4, 6], false);
+            strokeCurve(path, COLORS.region, 3.5, null, true);
+          } else {
+            strokeCurve(rawPath, COLORS.path, 3.5, null, true);
           }
 
-          /* ---- drawing helpers (main canvas) ---- */
-          function text(str, x, y, color, size = 12) {
+          // vector decomposition at the current t
+          const t = S.t;
+          const gt = gTilde();
+          const c1 = mul(gt, t * (1 - t)),
+            raw = rawPath(t),
+            pt = path(t);
+          arrow(O, c1, 'rgba(251,146,60,0.8)', 1.5, [5, 5]);
+          arrow(c1, raw, 'rgba(56,189,248,0.8)', 1.5, [5, 5]);
+
+          // the two directions, plus the rescaled gradient leg the path actually uses
+          arrow(O, S.g, COLORS.g, 3);
+          if (norm(gt) > 1e-6) arrow(O, gt, 'rgba(251,146,60,0.45)', 2, [2, 5]);
+          arrow(O, S.q, COLORS.q, 3);
+
+          // minimizer of the toy landscape
+          const m = toS(Ainv(S.g));
+          cross(m.x, m.y, 6, 'rgba(255,255,255,0.75)');
+          text('min f', m.x + 10, m.y - 10, 'rgba(255,255,255,0.75)');
+
+          // origin
+          const o = toS(O);
+          dotAt(o.x, o.y, 4.5, '#e6eaf2');
+          text('x', o.x - 16, o.y + 14, '#e6eaf2');
+
+          // current point (and its projection, if clipped)
+          if (S.region && norm(raw) > S.radius) {
+            const r = toS(raw),
+              p = toS(pt);
+            dotAt(r.x, r.y, 4, 'rgba(250,204,21,0.45)');
             ctx.save();
-            ctx.font = `${size}px ${MONO}`;
-            ctx.textBaseline = 'middle';
-            const wd = ctx.measureText(str).width;
-            ctx.fillStyle = 'rgba(6,10,20,0.78)';
-            ctx.fillRect(x - 3, y - size * 0.75, wd + 6, size * 1.5);
-            ctx.fillStyle = color;
-            ctx.fillText(str, x, y);
-            ctx.restore();
-          }
-          function labelNear(p, str, color) {
-            const s = toS(p);
-            ctx.font = `12px ${MONO}`;
-            const wd = ctx.measureText(str).width;
-            let x = s.x + 14;
-            if (x + wd + 6 > view.w) x = s.x - wd - 14;
-            text(str, clamp(x, 4, view.w - wd - 6), clamp(s.y - 16, 12, view.h - 12), color);
-          }
-          function arrow(from, to, color, width = 2.5, dash = null) {
-            const a = toS(from), b = toS(to);
-            const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
-            if (len < 1) return;
-            const ux = dx / len, uy = dy / len, hl = Math.min(12, len * 0.5);
-            ctx.save();
-            ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
-            if (dash) ctx.setLineDash(dash);
-            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x - ux * hl * 0.8, b.y - uy * hl * 0.8); ctx.stroke();
-            ctx.setLineDash([]);
+            ctx.setLineDash([3, 4]);
+            ctx.strokeStyle = 'rgba(52,211,153,0.85)';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.moveTo(b.x, b.y);
-            ctx.lineTo(b.x - ux * hl - uy * hl * 0.5, b.y - uy * hl + ux * hl * 0.5);
-            ctx.lineTo(b.x - ux * hl + uy * hl * 0.5, b.y - uy * hl - ux * hl * 0.5);
-            ctx.closePath(); ctx.fill();
-            ctx.restore();
-          }
-          function strokeCurve(fn, color, width, dash, glow) {
-            ctx.save();
-            ctx.beginPath();
-            for (let i = 0; i <= 160; i++) {
-              const s = toS(fn(i / 160));
-              if (i) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y);
-            }
-            ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            if (dash) ctx.setLineDash(dash);
-            if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 14; }
+            ctx.moveTo(r.x, r.y);
+            ctx.lineTo(p.x, p.y);
             ctx.stroke();
             ctx.restore();
           }
-          function dotAt(x, y, r, color) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); }
-          function glowDot(x, y, r, color) {
-            ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 16; dotAt(x, y, r, color); ctx.restore();
-            ctx.lineWidth = 2; ctx.strokeStyle = '#0b1020'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+          const p = toS(pt);
+          glowDot(p.x, p.y, 7, COLORS.pt);
+          text(`x + d(${t.toFixed(2)})`, p.x + 12, p.y + 14, COLORS.pt);
+
+          // handles
+          handle(S.g, COLORS.g);
+          labelNear(S.g, '−∇f  (direction only)', COLORS.g);
+          if (norm(gt) > 1e-6) labelNear(gt, 'g̃ = ‖q‖·(−∇f)/‖∇f‖', 'rgba(251,146,60,0.75)');
+          handle(S.q, COLORS.q);
+          labelNear(S.q, '−H∇f  (oracle, t=1)', COLORS.q);
+
+          drawPlot();
+          updateReadouts();
+        }
+
+        /* ---- φ(t) plot ---- */
+        function drawPlot() {
+          const w = pv.clientWidth,
+            h = pv.clientHeight;
+          if (!w || !h) return;
+          pctx.clearRect(0, 0, w, h);
+          const N = 240,
+            ph = new Array(N + 1),
+            ar = new Array(N + 1);
+          let lo = 0,
+            hi = 0;
+          for (let i = 0; i <= N; i++) {
+            const t = i / N;
+            ph[i] = phi(t);
+            ar[i] = armijo(t);
+            lo = Math.min(lo, ph[i], ar[i]);
+            hi = Math.max(hi, ph[i], ar[i]);
           }
-          function handle(p, color) {
-            const s = toS(p);
-            ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 10; dotAt(s.x, s.y, 8, color); ctx.restore();
-            ctx.lineWidth = 2.5; ctx.strokeStyle = '#ffffff'; ctx.beginPath(); ctx.arc(s.x, s.y, 8, 0, Math.PI * 2); ctx.stroke();
-          }
-          function cross(x, y, r, color) {
-            ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x - r, y + r); ctx.lineTo(x + r, y - r); ctx.stroke();
-            ctx.restore();
-          }
-
-          function drawContours() {
-            const center = Ainv(S.g);
-            const fmin = -0.5 * dot(S.g, center);
-            const corners = [toW({ x: 0, y: 0 }), toW({ x: view.w, y: 0 }), toW({ x: 0, y: view.h }), toW({ x: view.w, y: view.h })];
-            const fmax = Math.max(...corners.map(f));
-            const N = 16, step = (fmax - fmin) / N;
-            if (!(step > 0)) return;
-            const c = toS(center);
-            for (let k = N; k >= 1; k--) {
-              const r2 = 2 * (fmin + k * step - fmin);
-              const a1 = Math.sqrt(r2) * view.scale, a2 = Math.sqrt(r2 / S.kappa) * view.scale;
-              const u = 1 - k / N;
-              ctx.beginPath();
-              ctx.ellipse(c.x, c.y, a1, a2, -S.theta, 0, Math.PI * 2);
-              ctx.fillStyle = `rgba(139,92,246,${0.035 + 0.3 * u * u})`;
-              ctx.fill();
-              ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-              ctx.lineWidth = 1;
-              ctx.stroke();
-            }
-          }
-          function drawGrid() {
-            const { w, h } = view;
-            const tl = toW({ x: 0, y: 0 }), br = toW({ x: w, y: h });
-            ctx.save(); ctx.lineWidth = 1;
-            for (let gx = Math.ceil(tl.x); gx <= Math.floor(br.x); gx++) {
-              const s = toS({ x: gx, y: 0 });
-              ctx.strokeStyle = gx === 0 ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.06)';
-              ctx.beginPath(); ctx.moveTo(s.x, 0); ctx.lineTo(s.x, h); ctx.stroke();
-            }
-            for (let gy = Math.ceil(br.y); gy <= Math.floor(tl.y); gy++) {
-              const s = toS({ x: 0, y: gy });
-              ctx.strokeStyle = gy === 0 ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.06)';
-              ctx.beginPath(); ctx.moveTo(0, s.y); ctx.lineTo(w, s.y); ctx.stroke();
-            }
-            ctx.restore();
-          }
-
-          function draw() {
-            const { w, h } = view;
-            if (!w || !h) return;
-            ctx.clearRect(0, 0, w, h);
-            drawContours();
-            drawGrid();
-
-            const O = { x: 0, y: 0 };
-            if (S.region) {
-              const o = toS(O);
-              ctx.save();
-              ctx.beginPath(); ctx.arc(o.x, o.y, S.radius * view.scale, 0, Math.PI * 2);
-              ctx.fillStyle = 'rgba(52,211,153,0.06)'; ctx.fill();
-              ctx.setLineDash([6, 6]); ctx.strokeStyle = 'rgba(52,211,153,0.75)'; ctx.lineWidth = 1.5; ctx.stroke();
-              ctx.restore();
-              strokeCurve(rawPath, 'rgba(167,139,250,0.35)', 2, [4, 6], false);
-              strokeCurve(path, COLORS.region, 3.5, null, true);
-            } else {
-              strokeCurve(rawPath, COLORS.path, 3.5, null, true);
-            }
-
-            // vector decomposition at the current t
-            const t = S.t;
-           const gt = gTilde();
-           const c1 = mul(gt, t * (1 - t)), raw = rawPath(t), pt = path(t);
-            arrow(O, c1, 'rgba(251,146,60,0.8)', 1.5, [5, 5]);
-            arrow(c1, raw, 'rgba(56,189,248,0.8)', 1.5, [5, 5]);
-
-           // the two directions, plus the rescaled gradient leg the path actually uses
-            arrow(O, S.g, COLORS.g, 3);
-           if (norm(gt) > 1e-6) arrow(O, gt, 'rgba(251,146,60,0.45)', 2, [2, 5]);
-            arrow(O, S.q, COLORS.q, 3);
-
-            // minimizer of the toy landscape
-            const m = toS(Ainv(S.g));
-            cross(m.x, m.y, 6, 'rgba(255,255,255,0.75)');
-            text('min f', m.x + 10, m.y - 10, 'rgba(255,255,255,0.75)');
-
-            // origin
-            const o = toS(O);
-            dotAt(o.x, o.y, 4.5, '#e6eaf2');
-            text('x', o.x - 16, o.y + 14, '#e6eaf2');
-
-            // current point (and its projection, if clipped)
-            if (S.region && norm(raw) > S.radius) {
-              const r = toS(raw), p = toS(pt);
-              dotAt(r.x, r.y, 4, 'rgba(250,204,21,0.45)');
-              ctx.save(); ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(52,211,153,0.85)'; ctx.lineWidth = 1.5;
-              ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(p.x, p.y); ctx.stroke(); ctx.restore();
-            }
-            const p = toS(pt);
-            glowDot(p.x, p.y, 7, COLORS.pt);
-            text(`x + d(${t.toFixed(2)})`, p.x + 12, p.y + 14, COLORS.pt);
-
-            // handles
-            handle(S.g, COLORS.g);
-           labelNear(S.g, '−∇f  (direction only)', COLORS.g);
-           if (norm(gt) > 1e-6) labelNear(gt, 'g̃ = ‖q‖·(−∇f)/‖∇f‖', 'rgba(251,146,60,0.75)');
-            handle(S.q, COLORS.q);
-            labelNear(S.q, '−H∇f  (oracle, t=1)', COLORS.q);
-
-            drawPlot();
-            updateReadouts();
-          }
-
-          /* ---- φ(t) plot ---- */
-          function drawPlot() {
-            const w = pv.clientWidth, h = pv.clientHeight;
-            if (!w || !h) return;
-            pctx.clearRect(0, 0, w, h);
-            const N = 240, ph = new Array(N + 1), ar = new Array(N + 1);
-            let lo = 0, hi = 0;
+          const span = hi - lo || 1;
+          lo -= span * 0.1;
+          hi += span * 0.1;
+          const X = (t) => PAD.l + t * (w - PAD.l - PAD.r);
+          const Y = (v) => PAD.t + ((hi - v) / (hi - lo)) * (h - PAD.t - PAD.b);
+          const ptext = (str, x, y, color, align = 'left') => {
+            pctx.font = `11px ${MONO}`;
+            pctx.fillStyle = color;
+            pctx.textAlign = align;
+            pctx.textBaseline = 'middle';
+            pctx.fillText(str, x, y);
+          };
+          const line = (arr, color, width, dash) => {
+            pctx.save();
+            pctx.beginPath();
             for (let i = 0; i <= N; i++) {
-              const t = i / N;
-              ph[i] = phi(t); ar[i] = armijo(t);
-              lo = Math.min(lo, ph[i], ar[i]); hi = Math.max(hi, ph[i], ar[i]);
+              const x = X(i / N),
+                y = Y(arr[i]);
+              if (i) pctx.lineTo(x, y);
+              else pctx.moveTo(x, y);
             }
-            const span = hi - lo || 1;
-            lo -= span * 0.1; hi += span * 0.1;
-            const X = (t) => PAD.l + t * (w - PAD.l - PAD.r);
-            const Y = (v) => PAD.t + ((hi - v) / (hi - lo)) * (h - PAD.t - PAD.b);
-            const ptext = (str, x, y, color, align = 'left') => {
-              pctx.font = `11px ${MONO}`; pctx.fillStyle = color; pctx.textAlign = align; pctx.textBaseline = 'middle'; pctx.fillText(str, x, y);
-            };
-            const line = (arr, color, width, dash) => {
-              pctx.save(); pctx.beginPath();
-              for (let i = 0; i <= N; i++) { const x = X(i / N), y = Y(arr[i]); if (i) pctx.lineTo(x, y); else pctx.moveTo(x, y); }
-              pctx.strokeStyle = color; pctx.lineWidth = width; pctx.lineJoin = 'round';
-              if (dash) pctx.setLineDash(dash);
-              pctx.stroke(); pctx.restore();
-            };
-            const vline = (x, color, dash) => {
-              pctx.save(); pctx.strokeStyle = color; pctx.lineWidth = 1.5; if (dash) pctx.setLineDash(dash);
-              pctx.beginPath(); pctx.moveTo(x, PAD.t); pctx.lineTo(x, h - PAD.b); pctx.stroke(); pctx.restore();
-            };
-
-            // frame + accepted bands
-            pctx.fillStyle = 'rgba(255,255,255,0.025)';
-            pctx.fillRect(PAD.l, PAD.t, w - PAD.l - PAD.r, h - PAD.t - PAD.b);
-            pctx.fillStyle = 'rgba(52,211,153,0.16)';
-            for (let i = 0; i < N; i++) {
-              if (ph[i] <= ar[i]) pctx.fillRect(X(i / N), PAD.t, X((i + 1) / N) - X(i / N) + 0.6, h - PAD.t - PAD.b);
-            }
-            // zero line
-            pctx.strokeStyle = 'rgba(255,255,255,0.28)'; pctx.lineWidth = 1;
-            pctx.beginPath(); pctx.moveTo(PAD.l, Y(0)); pctx.lineTo(w - PAD.r, Y(0)); pctx.stroke();
-            // curves
-            line(ar, 'rgba(251,146,60,0.95)', 1.5, [5, 4]);
-            line(ph, S.region ? COLORS.region : COLORS.path, 2.5, null);
-            // t*
-            const st = argminT();
-            vline(X(st.t), 'rgba(250,204,21,0.55)', [3, 4]);
-            ptext('t*', X(st.t) + 4, PAD.t + 8, 'rgba(250,204,21,0.9)');
-            // current t
-            vline(X(S.t), 'rgba(255,255,255,0.65)', null);
-            const cy = Y(phi(S.t));
-            pctx.save(); pctx.shadowColor = COLORS.pt; pctx.shadowBlur = 10;
-            pctx.beginPath(); pctx.arc(X(S.t), cy, 5, 0, Math.PI * 2); pctx.fillStyle = COLORS.pt; pctx.fill(); pctx.restore();
-            // axes
-            ptext('t = 0', X(0), h - 10, '#98a3b8', 'left');
-            ptext('t = 1', X(1), h - 10, '#98a3b8', 'right');
-            ptext(fmt(hi, 1), PAD.l - 6, PAD.t + 4, '#98a3b8', 'right');
-            ptext(fmt(lo, 1), PAD.l - 6, h - PAD.b - 4, '#98a3b8', 'right');
-            ptext('0', PAD.l - 6, Y(0), '#98a3b8', 'right');
-            ptext('φ(t) = f(x + d(t)) − f(x)', PAD.l + 8, PAD.t + 8, 'rgba(230,234,242,0.8)');
-          }
-
-          function updateReadouts() {
-            const t = S.t, d = path(t), v = phi(t), a = armijo(t), st = argminT();
-            ui.out.t.value = fmt(t, 3);
-            ui.out.t2.textContent = fmt(t, 3);
-            ui.out.kappa.value = String(S.kappa);
-            ui.out.radius.value = fmt(S.radius, 1);
-            ui.out.wg.textContent = fmt(t * (1 - t), 3);
-            ui.out.wq.textContent = fmt(t * t, 3);
-            ui.out.len.textContent = fmt(norm(d), 3);
-            ui.out.phi.textContent = fmt(v, 3);
-            const ok = v <= a;
-            ui.out.armijo.textContent = ok ? '✓ sufficient decrease' : '✗ rejected';
-            ui.out.armijo.className = ok ? 'ok' : 'bad';
-            ui.out.tstar.textContent = fmt(st.t, 3);
-            ui.out.phistar.textContent = fmt(st.v, 3);
-          }
-
-          /* ---- sizing ---- */
-          function resize() {
-            const dpr = window.devicePixelRatio || 1;
-            for (const [c, cx] of [[cv, ctx], [pv, pctx]]) {
-              const r = c.getBoundingClientRect();
-              c.width = Math.max(1, Math.round(r.width * dpr));
-              c.height = Math.max(1, Math.round(r.height * dpr));
-              cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            }
-            view.w = cv.clientWidth; view.h = cv.clientHeight;
-            view.cx = view.w * 0.5; view.cy = view.h * 0.5;
-            view.scale = Math.min(view.w, view.h) / 9.5;
-            draw();
-          }
-          if ('ResizeObserver' in window) new ResizeObserver(resize).observe(cv);
-          else window.addEventListener('resize', resize);
-
-          /* ---- pointer interaction: drag handles ---- */
-          const localPt = (e, el) => { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-          const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-          const HIT = 18;
-          cv.addEventListener('pointerdown', (e) => {
-            const p = localPt(e, cv);
-            const dg = dist(p, toS(S.g)), dq = dist(p, toS(S.q));
-            drag = dq <= HIT && dq <= dg ? 'q' : dg <= HIT ? 'g' : null;
-            if (drag) {
-              cv.setPointerCapture(e.pointerId);
-              cv.classList.add('dragging');
-              stopPlay();
-              e.preventDefault();
-            }
-          });
-          cv.addEventListener('pointermove', (e) => {
-            const p = localPt(e, cv);
-            if (drag) {
-              S[drag] = toW({ x: clamp(p.x, 6, view.w - 6), y: clamp(p.y, 6, view.h - 6) });
-              draw();
-            } else {
-              const near = dist(p, toS(S.g)) <= HIT || dist(p, toS(S.q)) <= HIT;
-              cv.style.cursor = near ? 'grab' : 'default';
-            }
-          });
-          const endDrag = (e) => {
-            if (!drag) return;
-            drag = null;
-            cv.classList.remove('dragging');
-            try { cv.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            pctx.strokeStyle = color;
+            pctx.lineWidth = width;
+            pctx.lineJoin = 'round';
+            if (dash) pctx.setLineDash(dash);
+            pctx.stroke();
+            pctx.restore();
           };
-          cv.addEventListener('pointerup', endDrag);
-          cv.addEventListener('pointercancel', endDrag);
-
-          /* ---- pointer interaction: pick t on the φ plot ---- */
-          const setTFromPlot = (e) => {
-            const p = localPt(e, pv);
-            const r = pv.getBoundingClientRect();
-            S.t = clamp((p.x - PAD.l) / (r.width - PAD.l - PAD.r), 0, 1);
-            ui.t.value = S.t;
-            draw();
+          const vline = (x, color, dash) => {
+            pctx.save();
+            pctx.strokeStyle = color;
+            pctx.lineWidth = 1.5;
+            if (dash) pctx.setLineDash(dash);
+            pctx.beginPath();
+            pctx.moveTo(x, PAD.t);
+            pctx.lineTo(x, h - PAD.b);
+            pctx.stroke();
+            pctx.restore();
           };
-          pv.addEventListener('pointerdown', (e) => { pv.setPointerCapture(e.pointerId); stopPlay(); setTFromPlot(e); });
-          pv.addEventListener('pointermove', (e) => { if (e.buttons & 1) setTFromPlot(e); });
 
-          /* ---- controls ---- */
-          ui.t.addEventListener('input', () => { stopPlay(); S.t = +ui.t.value; draw(); });
-          ui.kappa.addEventListener('input', () => { S.kappa = +ui.kappa.value; draw(); });
-          ui.region.addEventListener('change', () => { S.region = ui.region.checked; ui.radiusWrap.hidden = !S.region; draw(); });
-          ui.radius.addEventListener('input', () => { S.radius = +ui.radius.value; draw(); });
+          // frame + accepted bands
+          pctx.fillStyle = 'rgba(255,255,255,0.025)';
+          pctx.fillRect(PAD.l, PAD.t, w - PAD.l - PAD.r, h - PAD.t - PAD.b);
+          pctx.fillStyle = 'rgba(52,211,153,0.16)';
+          for (let i = 0; i < N; i++) {
+            if (ph[i] <= ar[i])
+              pctx.fillRect(X(i / N), PAD.t, X((i + 1) / N) - X(i / N) + 0.6, h - PAD.t - PAD.b);
+          }
+          // zero line
+          pctx.strokeStyle = 'rgba(255,255,255,0.28)';
+          pctx.lineWidth = 1;
+          pctx.beginPath();
+          pctx.moveTo(PAD.l, Y(0));
+          pctx.lineTo(w - PAD.r, Y(0));
+          pctx.stroke();
+          // curves
+          line(ar, 'rgba(251,146,60,0.95)', 1.5, [5, 4]);
+          line(ph, S.region ? COLORS.region : COLORS.path, 2.5, null);
+          // t*
+          const st = argminT();
+          vline(X(st.t), 'rgba(250,204,21,0.55)', [3, 4]);
+          ptext('t*', X(st.t) + 4, PAD.t + 8, 'rgba(250,204,21,0.9)');
+          // current t
+          vline(X(S.t), 'rgba(255,255,255,0.65)', null);
+          const cy = Y(phi(S.t));
+          pctx.save();
+          pctx.shadowColor = COLORS.pt;
+          pctx.shadowBlur = 10;
+          pctx.beginPath();
+          pctx.arc(X(S.t), cy, 5, 0, Math.PI * 2);
+          pctx.fillStyle = COLORS.pt;
+          pctx.fill();
+          pctx.restore();
+          // axes
+          ptext('t = 0', X(0), h - 10, '#98a3b8', 'left');
+          ptext('t = 1', X(1), h - 10, '#98a3b8', 'right');
+          ptext(fmt(hi, 1), PAD.l - 6, PAD.t + 4, '#98a3b8', 'right');
+          ptext(fmt(lo, 1), PAD.l - 6, h - PAD.b - 4, '#98a3b8', 'right');
+          ptext('0', PAD.l - 6, Y(0), '#98a3b8', 'right');
+          ptext('φ(t) = f(x + d(t)) − f(x)', PAD.l + 8, PAD.t + 8, 'rgba(230,234,242,0.8)');
+        }
 
-          function tick() {
-            S.t = clamp(S.t + dir * 0.006, 0, 1);
-            if (S.t >= 1) dir = -1;
-            if (S.t <= 0) dir = 1;
-            ui.t.value = S.t;
+        function updateReadouts() {
+          const t = S.t,
+            d = path(t),
+            v = phi(t),
+            a = armijo(t),
+            st = argminT();
+          ui.out.t.value = fmt(t, 3);
+          ui.out.t2.textContent = fmt(t, 3);
+          ui.out.kappa.value = String(S.kappa);
+          ui.out.radius.value = fmt(S.radius, 1);
+          ui.out.wg.textContent = fmt(t * (1 - t), 3);
+          ui.out.wq.textContent = fmt(t * t, 3);
+          ui.out.len.textContent = fmt(norm(d), 3);
+          ui.out.phi.textContent = fmt(v, 3);
+          const ok = v <= a;
+          ui.out.armijo.textContent = ok ? '✓ sufficient decrease' : '✗ rejected';
+          ui.out.armijo.className = ok ? 'ok' : 'bad';
+          ui.out.tstar.textContent = fmt(st.t, 3);
+          ui.out.phistar.textContent = fmt(st.v, 3);
+        }
+
+        /* ---- sizing ---- */
+        function resize() {
+          const dpr = window.devicePixelRatio || 1;
+          for (const [c, cx] of [
+            [cv, ctx],
+            [pv, pctx],
+          ]) {
+            const r = c.getBoundingClientRect();
+            c.width = Math.max(1, Math.round(r.width * dpr));
+            c.height = Math.max(1, Math.round(r.height * dpr));
+            cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+          view.w = cv.clientWidth;
+          view.h = cv.clientHeight;
+          view.cx = view.w * 0.5;
+          view.cy = view.h * 0.5;
+          view.scale = Math.min(view.w, view.h) / 9.5;
+          draw();
+        }
+        if ('ResizeObserver' in window) new ResizeObserver(resize).observe(cv);
+        else window.addEventListener('resize', resize);
+
+        /* ---- pointer interaction: drag handles ---- */
+        const localPt = (e, el) => {
+          const r = el.getBoundingClientRect();
+          return { x: e.clientX - r.left, y: e.clientY - r.top };
+        };
+        const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+        const HIT = 18;
+        cv.addEventListener('pointerdown', (e) => {
+          const p = localPt(e, cv);
+          const dg = dist(p, toS(S.g)),
+            dq = dist(p, toS(S.q));
+          drag = dq <= HIT && dq <= dg ? 'q' : dg <= HIT ? 'g' : null;
+          if (drag) {
+            cv.setPointerCapture(e.pointerId);
+            cv.classList.add('dragging');
+            stopPlay();
+            e.preventDefault();
+          }
+        });
+        cv.addEventListener('pointermove', (e) => {
+          const p = localPt(e, cv);
+          if (drag) {
+            S[drag] = toW({ x: clamp(p.x, 6, view.w - 6), y: clamp(p.y, 6, view.h - 6) });
             draw();
-            raf = requestAnimationFrame(tick);
+          } else {
+            const near = dist(p, toS(S.g)) <= HIT || dist(p, toS(S.q)) <= HIT;
+            cv.style.cursor = near ? 'grab' : 'default';
           }
-          function stopPlay() {
-            if (!playing) return;
-            playing = false;
-            cancelAnimationFrame(raf);
-            ui.play.textContent = '▶ Animate t';
+        });
+        const endDrag = (e) => {
+          if (!drag) return;
+          drag = null;
+          cv.classList.remove('dragging');
+          try {
+            cv.releasePointerCapture(e.pointerId);
+          } catch (_) {
+            /* ignore */
           }
-          ui.play.addEventListener('click', () => {
-            if (playing) { stopPlay(); return; }
-            playing = true;
-            ui.play.textContent = '⏸ Pause';
-            raf = requestAnimationFrame(tick);
-          });
+        };
+        cv.addEventListener('pointerup', endDrag);
+        cv.addEventListener('pointercancel', endDrag);
 
-          const PRESETS = {
-            newton: () => { S.q = Ainv(S.g); },
-            good: () => { S.q = rot(mul(Ainv(S.g), 0.9), 0.3); },
-            overshoot: () => { S.q = mul(Ainv(S.g), 1.9); },
-            poor: () => { S.q = rot(mul(S.g, -0.55), 0.7); },
-            reset: () => {
-              S.g = { x: -3.1, y: 0.9 }; S.kappa = 6; S.t = 0.6; S.region = false; S.radius = 2.2;
-              ui.kappa.value = 6; ui.t.value = 0.6; ui.region.checked = false; ui.radius.value = 2.2; ui.radiusWrap.hidden = true;
-              PRESETS.good();
-            },
-          };
-          document.querySelectorAll('[data-preset]').forEach((b) =>
-            b.addEventListener('click', () => { stopPlay(); PRESETS[b.dataset.preset](); draw(); })
-          );
+        /* ---- pointer interaction: pick t on the φ plot ---- */
+        const setTFromPlot = (e) => {
+          const p = localPt(e, pv);
+          const r = pv.getBoundingClientRect();
+          S.t = clamp((p.x - PAD.l) / (r.width - PAD.l - PAD.r), 0, 1);
+          ui.t.value = S.t;
+          draw();
+        };
+        pv.addEventListener('pointerdown', (e) => {
+          pv.setPointerCapture(e.pointerId);
+          stopPlay();
+          setTFromPlot(e);
+        });
+        pv.addEventListener('pointermove', (e) => {
+          if (e.buttons & 1) setTFromPlot(e);
+        });
 
-          PRESETS.reset();
-          resize();
-        })();
-      </script>
-    </body>
-  </html>
+        /* ---- controls ---- */
+        ui.t.addEventListener('input', () => {
+          stopPlay();
+          S.t = +ui.t.value;
+          draw();
+        });
+        ui.kappa.addEventListener('input', () => {
+          S.kappa = +ui.kappa.value;
+          draw();
+        });
+        ui.region.addEventListener('change', () => {
+          S.region = ui.region.checked;
+          ui.radiusWrap.hidden = !S.region;
+          draw();
+        });
+        ui.radius.addEventListener('input', () => {
+          S.radius = +ui.radius.value;
+          draw();
+        });
+
+        function tick() {
+          S.t = clamp(S.t + dir * 0.006, 0, 1);
+          if (S.t >= 1) dir = -1;
+          if (S.t <= 0) dir = 1;
+          ui.t.value = S.t;
+          draw();
+          raf = requestAnimationFrame(tick);
+        }
+        function stopPlay() {
+          if (!playing) return;
+          playing = false;
+          cancelAnimationFrame(raf);
+          ui.play.textContent = '▶ Animate t';
+        }
+        ui.play.addEventListener('click', () => {
+          if (playing) {
+            stopPlay();
+            return;
+          }
+          playing = true;
+          ui.play.textContent = '⏸ Pause';
+          raf = requestAnimationFrame(tick);
+        });
+
+        const PRESETS = {
+          newton: () => {
+            S.q = Ainv(S.g);
+          },
+          good: () => {
+            S.q = rot(mul(Ainv(S.g), 0.9), 0.3);
+          },
+          overshoot: () => {
+            S.q = mul(Ainv(S.g), 1.9);
+          },
+          poor: () => {
+            S.q = rot(mul(S.g, -0.55), 0.7);
+          },
+          reset: () => {
+            S.g = { x: -3.1, y: 0.9 };
+            S.kappa = 6;
+            S.t = 0.6;
+            S.region = false;
+            S.radius = 2.2;
+            ui.kappa.value = 6;
+            ui.t.value = 0.6;
+            ui.region.checked = false;
+            ui.radius.value = 2.2;
+            ui.radiusWrap.hidden = true;
+            PRESETS.good();
+          },
+        };
+        document.querySelectorAll('[data-preset]').forEach((b) =>
+          b.addEventListener('click', () => {
+            stopPlay();
+            PRESETS[b.dataset.preset]();
+            draw();
+          })
+        );
+
+        PRESETS.reset();
+        resize();
+      })();
+    </script>
+  </body>
+</html>
