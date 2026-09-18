@@ -1,29 +1,11 @@
 {
     "id": "qqn",
     "title": "Quadratic Quasi-Newton",
-    "description": "A new optimization algorithm for smooth functions that interpolates between gradient descent and L-BFGS along a quadratic path, with a provable descent guarantee and no extra hyperparameters.",
-    "tags": [
-        "optimization",
-        "quasi-newton",
-        "l-bfgs",
-        "gradient-descent",
-        "line-search",
-        "numerical-methods",
-        "machine-learning"
-    ],
-    "category": "essays",
+    "pitch": "A new optimization algorithm for smooth functions that interpolates between gradient descent and L-BFGS.",
+    "category": "essay",
     "href": "index.html",
     "readme": "README.md",
-    "author": "SimiaCryptus",
-    "license": "MIT",
-    "date": "2025",
     "order": 0,
-    "seo": {
-        "title": "QQN Optimizer — Quadratic-Quasi-Newton, Illustrated",
-        "description": "An illustrated, interactive introduction to the QQN (Quadratic-Quasi-Newton) optimizer: the quadratic path between gradient descent and quasi-Newton, its four strategy slots, what makes it different, and its history.",
-        "canonical": "https://games.cognotik.com/optimization/QQN/index.html",
-        "type": "article"
-    },
     "section": "essays",
     "icon": "QQN",
     "subtitle": "Standalone · optimization"
